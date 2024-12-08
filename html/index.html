@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="stylesheet" href="assets/css/index.css" />
+  </head>
+  <body>
+    <h1>Tacticstoe</h1>
+    <main>
+      <div class="game-container">
+        <button data-cell="1" class="cell"></button>
+        <button data-cell="2" class="cell"></button>
+        <button data-cell="3" class="cell"></button>
+        <button data-cell="4" class="cell"></button>
+        <button data-cell="5" class="cell"></button>
+        <button data-cell="6" class="cell"></button>
+        <button data-cell="7" class="cell"></button>
+        <button data-cell="8" class="cell"></button>
+        <button data-cell="9" class="cell"></button>
+        <button data-cell="10" class="cell"></button>
+        <button data-cell="11" class="cell"></button>
+        <button data-cell="12" class="cell"></button>
+        <button data-cell="13" class="cell"></button>
+        <button data-cell="14" class="cell"></button>
+        <button data-cell="15" class="cell"></button>
+        <button data-cell="16" class="cell"></button>
+      </div>
+    </main>
+
+    <div>
+      <button>Play against bot</button>
+      <button>Play online</button>
+    </div>
+
+    <script>
+      const socket = new WebSocket("ws://localhost:8080/ws");
+
+      socket.onopen = function (e) {
+        console.log("Connected to server");
+        socket.send("Hello from client");
+      };
+    </script>
+  </body>
+</html>
