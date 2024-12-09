@@ -7,20 +7,37 @@ body {
 }
 
 .game-container {
+  --border-color: 0, 0%, 0%;
+
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr;
 
   height: 500px;
   aspect-ratio: 1;
-  border: 5px solid black;
+  border: 5px solid hsl(var(--border-color));
 
   border-radius: 1rem;
   overflow: hidden;
 
-  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  box-shadow: hsla(var(--border-color), 0.2) 0px 8px 24px;
+
+  &[data-turn="true"] {
+    --border-color: 239, 50%, 40%;
+  }
+
+  &[data-turn="false"] {
+    --border-color: 0, 50%, 40%;
+  }
+
+  & > .cell {
+    border: 1px solid hsl(var(--border-color));
+    transition: border-color 0.2s;
+  }
+
+  transition: border-color 0.2s;
 }
 
-.cell {
-  border: 1px solid black;
-}
+/* .game-container[data-turn="player"] .cell {
+  border-color: var(--border-color);
+} */

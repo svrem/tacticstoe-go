@@ -1,10 +1,13 @@
 package websocket_service
 
 import (
+	"bytes"
+	"encoding/json"
 	"log/slog"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 )
 
 const (
@@ -12,7 +15,7 @@ const (
 	writeWait = 10 * time.Second
 
 	// Time allowed to read the next pong message from the peer.
-	pongWait = 5 * time.Second
+	pongWait = 60 * time.Second
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
@@ -26,10 +29,23 @@ var (
 	space   = []byte{' '}
 )
 
+type ClientMessage struct {
+	Type string            `json:"type"`
+	Data ClientMessageData `json:"data"`
+}
+type ClientMessageData map[string]interface{}
+
+type ClientActionsData struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+}
+
 type Client struct {
 	conn *websocket.Conn
 
 	elo_rating int
+
+	id string
 
 	queue *Queue
 
@@ -58,11 +74,41 @@ func (c *Client) readPump() {
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
-			slog.Error("Error reading message: " + err.Error())
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				slog.Error("Unexpected close error: " + err.Error())
+			} else {
+				slog.Info("Connection closed: " + err.Error())
+			}
 			break
 		}
 
-		slog.Info("Message received: " + string(message))
+		r := bytes.NewReader(message)
+
+		var client_message ClientMessage
+		if err := json.NewDecoder(r).Decode(&client_message); err != nil {
+			slog.Error("Error decoding message: " + err.Error())
+			continue
+		}
+
+		switch client_message.Type {
+		case "action":
+			var client_actions_data ClientActionsData
+			if err := mapstructure.Decode(client_message.Data, &client_actions_data); err != nil {
+				slog.Error("Error decoding action data: " + err.Error())
+				continue
+			}
+
+			if c.game == nil {
+				slog.Error("Client is not part of any game")
+				continue
+			}
+
+			c.game.make_action <- GameAction{
+				player: c,
+				x:      client_actions_data.X,
+				y:      client_actions_data.Y,
+			}
+		}
 	}
 }
 
@@ -90,12 +136,12 @@ func (c *Client) writePump() {
 			}
 			w.Write(message)
 
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
-			}
+			// // Add queued chat messages to the current websocket message.
+			// n := len(c.send)
+			// for i := 0; i < n; i++ {
+			// 	w.Write(newline)
+			// 	w.Write(<-c.send)
+			// }
 
 			if err := w.Close(); err != nil {
 				slog.Error("Error closing writer: " + err.Error())

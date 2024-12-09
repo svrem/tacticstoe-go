@@ -18,7 +18,8 @@
   <body>
     <h1>Tacticstoe</h1>
     <main>
-      <div class="game-container">
+      <div class="game-container" id="game-container">
+        <button data-cell="0" class="cell"></button>
         <button data-cell="1" class="cell"></button>
         <button data-cell="2" class="cell"></button>
         <button data-cell="3" class="cell"></button>
@@ -34,7 +35,6 @@
         <button data-cell="13" class="cell"></button>
         <button data-cell="14" class="cell"></button>
         <button data-cell="15" class="cell"></button>
-        <button data-cell="16" class="cell"></button>
       </div>
     </main>
 
@@ -44,12 +44,83 @@
     </div>
 
     <script>
+      const game_container = document.getElementById("game-container");
+
       const socket = new WebSocket("ws://localhost:8080/ws");
+
+      const game_state = {
+        player_id: null,
+        active_player: null,
+      };
 
       socket.onopen = function (e) {
         console.log("Connected to server");
-        socket.send("Hello from client");
       };
+      socket.onmessage = function (event) {
+        console.log("Message from server", event.data);
+        const server_message = JSON.parse(event.data);
+
+        switch (server_message.type) {
+          case "game_start":
+            game_container.setAttribute(
+              "data-turn",
+              server_message.data.starting_player === game_state.player_id
+            );
+
+            game_state.active_player = server_message.data.starting_player;
+            break;
+
+          case "join":
+            console.log("Joined queue", server_message);
+            game_state.player_id = server_message.data.id;
+            break;
+
+          case "game_update":
+            const { x, y, state, active_player } = server_message.data;
+
+            game_container.setAttribute(
+              "data-turn",
+              active_player === game_state.player_id
+            );
+            game_state.active_player = active_player;
+
+            const cell_index = y * 4 + x;
+
+            game_state.active_player = active_player;
+            const cell = game_container.children[cell_index];
+
+            cell.setAttribute("data-state", state);
+
+            if (state === 1) {
+              cell.innerHTML =
+                '<svg  xmlns="http://www.w3.org/2000/svg"  width="72"  height="72"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>';
+            } else if (state === 2) {
+              cell.innerHTML =
+                '<svg  xmlns="http://www.w3.org/2000/svg"  width="72"  height="72"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /></svg>';
+            }
+        }
+      };
+
+      function handleCellClick(e) {
+        const cell_index = e.target.getAttribute("data-cell");
+
+        const x = cell_index % 4;
+        const y = Math.floor(cell_index / 4);
+
+        socket.send(
+          JSON.stringify({
+            type: "action",
+            data: {
+              x,
+              y,
+            },
+          })
+        );
+      }
+
+      for (const cell of game_container.children) {
+        cell.addEventListener("click", handleCellClick);
+      }
     </script>
   </body>
 </html>

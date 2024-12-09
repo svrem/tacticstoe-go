@@ -1,11 +1,17 @@
 package websocket_service
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
+
+type JoinData struct {
+	Id string `json:"id"`
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -23,8 +29,24 @@ func ServeWs(queue Queue, w http.ResponseWriter, r *http.Request) {
 		conn:       conn,
 		elo_rating: 1000,
 		send:       make(chan []byte, 256),
+		id:         uuid.New().String(),
 	}
 	queue.register <- client
+
+	joinData := JoinData{
+		Id: client.id,
+	}
+	joinMessage, err := json.Marshal(DataMessage[JoinData]{
+		Type: "join",
+		Data: joinData,
+	})
+
+	if err != nil {
+		slog.Error("wsHandler: " + err.Error())
+		return
+	}
+
+	client.send <- joinMessage
 
 	go client.writePump()
 	go client.readPump()

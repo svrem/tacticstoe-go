@@ -49,7 +49,8 @@ func (q *Queue) Run(gp *GamePool) {
 			delete(q.clients, players[0])
 			delete(q.clients, players[1])
 
-			gp.register <- players
+			pplayers := [2]*Client{players[0], players[1]}
+			gp.register <- pplayers
 
 		case client := <-q.unregister:
 			slog.Info("Received unregister request.")

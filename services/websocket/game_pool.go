@@ -5,7 +5,7 @@ import "log/slog"
 type GamePool struct {
 	games []Game
 
-	register chan []*Client
+	register chan [2]*Client
 
 	close_game chan *Game
 }
@@ -45,7 +45,7 @@ func NewGamePool() *GamePool {
 	return &GamePool{
 		games: make([]Game, 0),
 
-		register: make(chan []*Client),
+		register: make(chan [2]*Client),
 
 		close_game: make(chan *Game),
 	}
