@@ -130,3 +130,31 @@ func (g *Game) Run(gp *GamePool) {
 		}
 	}
 }
+
+func checkBoardForWin(board [4][4]int) int {
+	for x := 0; x < 4; x++ {
+		for y := 0; y < 4; y++ {
+			if board[x][y] == 0 {
+				continue
+			}
+
+			if x > 0 && x < 3 && board[x][y] == board[x-1][y] && board[x][y] == board[x+1][y] {
+				return board[x][y]
+			}
+
+			if y > 0 && y < 3 && board[x][y] == board[x][y-1] && board[x][y] == board[x][y+1] {
+				return board[x][y]
+			}
+
+			if x > 0 && x < 3 && y > 0 && y < 3 && board[x][y] == board[x-1][y-1] && board[x][y] == board[x+1][y+1] {
+				return board[x][y]
+			}
+
+			if x > 0 && x < 3 && y > 0 && y < 3 && board[x][y] == board[x-1][y+1] && board[x][y] == board[x+1][y-1] {
+				return board[x][y]
+			}
+		}
+	}
+
+	return 0
+}
