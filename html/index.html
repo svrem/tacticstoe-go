@@ -63,7 +63,7 @@
         switch (server_message.type) {
           case "game_start":
             game_container.setAttribute(
-              "data-turn",
+              "data-player-turn",
               server_message.data.starting_player === game_state.player_id
             );
 
@@ -79,7 +79,7 @@
             const { x, y, state, active_player } = server_message.data;
 
             game_container.setAttribute(
-              "data-turn",
+              "data-player-turn",
               active_player === game_state.player_id
             );
             game_state.active_player = active_player;
@@ -98,6 +98,32 @@
               cell.innerHTML =
                 '<svg  xmlns="http://www.w3.org/2000/svg"  width="72"  height="72"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /></svg>';
             }
+
+            break;
+
+          case "game_end":
+            const clientIsWinner =
+              server_message.data.winner === game_state.player_id;
+            game_container.setAttribute("data-player-winner", clientIsWinner);
+
+            const coords = server_message.data.coords;
+            let coords_index = 0;
+
+            const i = setInterval(() => {
+              const [x, y] = coords[coords_index];
+              const cell_index = y * 4 + x;
+              const cell = game_container.children[cell_index];
+
+              cell.setAttribute("data-winner", clientIsWinner);
+
+              coords_index++;
+
+              if (coords_index >= coords.length) {
+                clearInterval(i);
+              }
+            }, 300);
+
+            break;
         }
       };
 

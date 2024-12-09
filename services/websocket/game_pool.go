@@ -31,8 +31,15 @@ func (gp *GamePool) Run() {
 
 		case game := <-gp.close_game:
 			for i, g := range gp.games {
-				if g == *game {
+				if g.id == game.id {
 					slog.Info("Closing game.")
+
+					g.player1.game = nil
+					g.player2.game = nil
+
+					// g.player1.conn.Close()
+					// g.player2.conn.Close()
+
 					gp.games = append(gp.games[:i], gp.games[i+1:]...)
 					break
 				}

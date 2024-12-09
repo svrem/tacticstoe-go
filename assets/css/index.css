@@ -1,3 +1,11 @@
+:root {
+  --player-color: 239, 50%, 40%;
+  --opponent-color: 0, 50%, 40%;
+
+  --winner-color: 120, 50%, 40%;
+  --loser-color: 0, 50%, 40%;
+}
+
 body {
   display: flex;
   flex-direction: column;
@@ -21,13 +29,22 @@ body {
   overflow: hidden;
 
   box-shadow: hsla(var(--border-color), 0.2) 0px 8px 24px;
+  transition: border-color 0.2s;
 
-  &[data-turn="true"] {
-    --border-color: 239, 50%, 40%;
+  &[data-player-turn="true"] {
+    --border-color: var(--player-color);
   }
 
-  &[data-turn="false"] {
-    --border-color: 0, 50%, 40%;
+  &[data-player-turn="false"] {
+    --border-color: var(--opponent-color);
+  }
+
+  &[data-player-winner="true"] {
+    --border-color: var(--winner-color);
+  }
+
+  &[data-player-winner="false"] {
+    --border-color: var(--loser-color);
   }
 
   & > .cell {
@@ -35,7 +52,37 @@ body {
     transition: border-color 0.2s;
   }
 
-  transition: border-color 0.2s;
+  & > .cell:hover {
+    border-color: hsl(var(--border-color));
+  }
+}
+
+.cell[data-winner="true"] {
+  background-color: hsla(var(--winner-color), 0.5);
+
+  & > * {
+    animation: quickBounce 0.5s;
+  }
+}
+
+.cell[data-winner="false"] {
+  background-color: hsla(var(--loser-color), 0.5);
+
+  & > * {
+    animation: quickBounce 0.5s cubic-bezier(0.93, 0.66, 0.37, 1);
+  }
+}
+
+@keyframes quickBounce {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.1) translateY(-10px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* .game-container[data-turn="player"] .cell {
