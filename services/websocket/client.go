@@ -56,13 +56,11 @@ type Client struct {
 
 func (c *Client) readPump() {
 	defer func() {
+		slog.Info("Closing readPump, id: " + c.id)
 		if c.game != nil {
-			slog.Info("Requesting unregistering client from the game.")
-
 			c.game.unregister <- c
 		}
 		if c.queue != nil {
-			slog.Info("Unregistering client from the queue.")
 			c.queue.unregister <- c
 		}
 		c.conn.Close()
@@ -77,8 +75,6 @@ func (c *Client) readPump() {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				slog.Error("Unexpected close error: " + err.Error())
-			} else {
-				slog.Info("Connection closed: " + err.Error())
 			}
 			break
 		}
@@ -116,16 +112,16 @@ func (c *Client) readPump() {
 func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		slog.Info("Closing writePump, id: " + c.id)
+
 		ticker.Stop()
 		c.conn.Close()
 	}()
 	for {
 		select {
 		case message, ok := <-c.send:
-			slog.Info("Sending message: " + string(message))
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
-				// The hub closed the channel.
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -137,19 +133,11 @@ func (c *Client) writePump() {
 			}
 			w.Write(message)
 
-			// // Add queued chat messages to the current websocket message.
-			// n := len(c.send)
-			// for i := 0; i < n; i++ {
-			// 	w.Write(newline)
-			// 	w.Write(<-c.send)
-			// }
-
 			if err := w.Close(); err != nil {
 				slog.Error("Error closing writer: " + err.Error())
 				return
 			}
 		case <-ticker.C:
-			slog.Info("Sending ping")
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				slog.Error("Error sending ping: " + err.Error())

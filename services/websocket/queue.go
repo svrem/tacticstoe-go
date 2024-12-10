@@ -2,7 +2,6 @@ package websocket_service
 
 import (
 	"log/slog"
-	"strconv"
 )
 
 type Queue struct {
@@ -25,17 +24,12 @@ func (q *Queue) Run(gp *GamePool) {
 	for {
 		select {
 		case client := <-q.register:
-			slog.Info("New Client was registered to the queue.")
 			q.clients[client] = true
 			client.queue = q
-
-			slog.Info("Number of clients in the queue: " + strconv.Itoa(len(q.clients)))
 
 			if len(q.clients) < 2 {
 				continue
 			}
-
-			slog.Info("Two clients are in the queue. Registering them to the game pool.")
 
 			// get two players from the clients map
 			var players []*Client

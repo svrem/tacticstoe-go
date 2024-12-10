@@ -34,11 +34,11 @@ func (gp *GamePool) Run() {
 				if g.id == game.id {
 					slog.Info("Closing game.")
 
-					g.player1.game = nil
-					g.player2.game = nil
+					game.player1.game = nil
+					game.player2.game = nil
 
-					// g.player1.conn.Close()
-					// g.player2.conn.Close()
+					close(game.player1.send)
+					close(game.player2.send)
 
 					gp.games = append(gp.games[:i], gp.games[i+1:]...)
 					break

@@ -81,14 +81,15 @@ func (g *Game) Run(gp *GamePool) {
 	for {
 		select {
 		case client := <-g.unregister:
-			slog.Info("Unregistering client from the game.")
-			if client == g.player1 {
-				g.player2.game = nil
-				g.player2.send <- []byte("Opponent left the game.")
-			} else {
-				g.player1.game = nil
-				g.player1.send <- []byte("Opponent left the game.")
+			defer func() {
+				recover()
+			}()
+
+			if client == nil {
 			}
+
+			g.player1.send <- []byte("Hello")
+			g.player2.send <- []byte("Hello")
 
 			gp.close_game <- g
 
@@ -113,10 +114,7 @@ func (g *Game) Run(gp *GamePool) {
 			isValidMove := checkForMoveValidity(winnerData, action, g.board, next_board)
 
 			if !isValidMove {
-				println("Invalid move")
 				continue
-			} else {
-				println("Valid move")
 			}
 
 			g.board = next_board
@@ -169,12 +167,10 @@ func (g *Game) Run(gp *GamePool) {
 func checkForMoveValidity(winnerData *BoardWinData, action GameAction, board [4][4]int, next_board [4][4]int) bool {
 
 	if board[action.x][action.y] != 0 {
-		println("Invalid move: square already occupied")
 		return false
 	}
 
 	if winnerData == nil {
-		println("Valid move: no winner")
 		return true
 	}
 
@@ -195,7 +191,6 @@ func checkForMoveValidity(winnerData *BoardWinData, action GameAction, board [4]
 		(action.x == 3 || next_board[action.x+1][action.y] != opponent) &&
 		(action.y == 0 || next_board[action.x][action.y-1] != opponent) &&
 		(action.y == 3 || next_board[action.x][action.y+1] != opponent) {
-		println("Invalid move: opponent has not placed their tick in an adjacent square")
 		return false
 	}
 

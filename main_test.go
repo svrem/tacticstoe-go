@@ -11,7 +11,7 @@ import (
 func TestLoadTestGame(t *testing.T) {
 	go startWebsocketServer()
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1000; i++ {
 		c := connectToWebsocket()
 
 		if c == nil {

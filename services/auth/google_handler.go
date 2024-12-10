@@ -27,10 +27,6 @@ func newGoogleHandler() *GoogleHandler {
 	var clientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
 	var redirectUrl = os.Getenv("GOOGLE_REDIRECT_URI")
 
-	println(clientId)
-	println(clientSecret)
-	println(redirectUrl)
-
 	var oauth2conf = &oauth2.Config{
 		ClientID:     clientId,
 		ClientSecret: clientSecret,
