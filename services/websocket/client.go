@@ -58,6 +58,7 @@ func (c *Client) readPump() {
 	defer func() {
 		if c.game != nil {
 			slog.Info("Requesting unregistering client from the game.")
+
 			c.game.unregister <- c
 		}
 		if c.queue != nil {

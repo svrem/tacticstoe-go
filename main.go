@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	db "tacticstoe/database"
 	auth_service "tacticstoe/services/auth"
 	ws_service "tacticstoe/services/websocket"
 
@@ -20,6 +21,9 @@ func main() {
 		return
 	}
 
+	database := db.OpenDatabase()
+	db.MigrateModel(database)
+
 	game_pool := ws_service.NewGamePool()
 	go game_pool.Run()
 
@@ -32,8 +36,13 @@ func main() {
 		ws_service.ServeWs(*queue, w, r)
 	})
 
-	http.HandleFunc("/auth/{provider}/login/", auth_service.LoginHandler)
-	http.HandleFunc("/auth/{provider}/callback/", auth_service.CallbackHandler)
+	http.HandleFunc("GET /auth/me/", func(w http.ResponseWriter, r *http.Request) {
+		auth_service.MeHandler(w, r, database)
+	})
+	http.HandleFunc("GET /auth/login/{provider}/", auth_service.LoginHandler)
+	http.HandleFunc("GET /auth/callback/{provider}/", func(w http.ResponseWriter, r *http.Request) {
+		auth_service.CallbackHandler(w, r, database)
+	})
 
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 

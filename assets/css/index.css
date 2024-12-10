@@ -21,12 +21,15 @@ body {
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr;
 
-  height: 500px;
+  width: 500px;
+  max-width: 90vw;
   aspect-ratio: 1;
   border: 5px solid hsl(var(--border-color));
 
   border-radius: 1rem;
   overflow: hidden;
+
+  color: black;
 
   box-shadow: hsla(var(--border-color), 0.2) 0px 8px 24px;
   transition: border-color 0.2s;
@@ -73,6 +76,37 @@ body {
   }
 }
 
+.header {
+  position: relative;
+
+  width: 100%;
+
+  & > h1 {
+    width: fit-content;
+    height: fit-content;
+
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+  }
+
+  .profile-picture {
+    width: 3.5rem;
+    aspect-ratio: 1;
+
+    border-radius: 9999999px;
+    box-shadow: 0px 8px 24px hsla(0, 0%, 0%, 0.2);
+    object-fit: cover;
+
+    margin-left: auto;
+
+    display: block;
+  }
+}
+
 @keyframes quickBounce {
   0% {
     transform: scale(1) translateY(0);
@@ -84,7 +118,3 @@ body {
     transform: scale(1) translateY(0);
   }
 }
-
-/* .game-container[data-turn="player"] .cell {
-  border-color: var(--border-color);
-} */
