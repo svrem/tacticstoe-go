@@ -43,7 +43,7 @@ type ClientActionsData struct {
 type Client struct {
 	conn *websocket.Conn
 
-	elo_rating int
+	eloRating int
 
 	id string
 
@@ -81,16 +81,16 @@ func (c *Client) readPump() {
 
 		r := bytes.NewReader(message)
 
-		var client_message ClientMessage
-		if err := json.NewDecoder(r).Decode(&client_message); err != nil {
+		var clientMessage ClientMessage
+		if err := json.NewDecoder(r).Decode(&clientMessage); err != nil {
 			slog.Error("Error decoding message: " + err.Error())
 			continue
 		}
 
-		switch client_message.Type {
+		switch clientMessage.Type {
 		case "action":
-			var client_actions_data ClientActionsData
-			if err := mapstructure.Decode(client_message.Data, &client_actions_data); err != nil {
+			var clientActionsData ClientActionsData
+			if err := mapstructure.Decode(clientMessage.Data, &clientActionsData); err != nil {
 				slog.Error("Error decoding action data: " + err.Error())
 				continue
 			}
@@ -100,10 +100,10 @@ func (c *Client) readPump() {
 				continue
 			}
 
-			c.game.make_action <- GameAction{
+			c.game.makeAction <- GameAction{
 				player: c,
-				x:      client_actions_data.X,
-				y:      client_actions_data.Y,
+				x:      clientActionsData.X,
+				y:      clientActionsData.Y,
 			}
 		}
 	}

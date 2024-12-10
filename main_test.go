@@ -31,11 +31,11 @@ func connectToWebsocket() *websocket.Conn {
 }
 
 func startWebsocketServer() {
-	game_pool := ws_service.NewGamePool()
-	go game_pool.Run()
+	gamePool := ws_service.NewGamePool()
+	go gamePool.Run()
 
 	queue := ws_service.NewQueue()
-	go queue.Run(game_pool)
+	go queue.Run(gamePool)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		ws_service.ServeWs(*queue, w, r)

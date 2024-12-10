@@ -1,14 +1,16 @@
 package websocket_service
 
 import (
-	"encoding/json"
 	"log/slog"
 
 	"github.com/google/uuid"
 )
 
 type GameStart struct {
-	Starting_player string `json:"starting_player"`
+	StartingPlayer string `json:"starting_player"`
+}
+
+type GameAbort struct {
 }
 
 type GameUpdate struct {
@@ -25,8 +27,8 @@ type GameAction struct {
 }
 
 type GameEnd struct {
-	Winner string    `json:"winner"`
-	Coords [3][2]int `json:"coords"`
+	Winner string     `json:"winner"`
+	Coords *[3][2]int `json:"coords"`
 }
 
 type Game struct {
@@ -37,20 +39,20 @@ type Game struct {
 
 	board [4][4]int
 
-	active_player *Client
+	activePlayer *Client
 
-	make_action chan GameAction
-	unregister  chan *Client
+	makeAction chan GameAction
+	unregister chan *Client
 }
 
 func newGame(player1 *Client, player2 *Client) Game {
-	game_join_data_message := DataMessage[GameStart]{
+	gameJoinDataMessage := DataMessage[GameStart]{
 		Type: "game_start",
 		Data: GameStart{
-			Starting_player: player1.id,
+			StartingPlayer: player1.id,
 		},
 	}
-	data, err := json.Marshal(game_join_data_message)
+	data, err := gameJoinDataMessage.Marshal()
 	if err != nil {
 		slog.Error("Error marshalling game start data.")
 		return Game{}
@@ -70,10 +72,10 @@ func newGame(player1 *Client, player2 *Client) Game {
 
 		board: [4][4]int{},
 
-		active_player: player1,
+		activePlayer: player1,
 
-		make_action: make(chan GameAction),
-		unregister:  make(chan *Client),
+		makeAction: make(chan GameAction),
+		unregister: make(chan *Client),
 	}
 }
 
@@ -88,45 +90,76 @@ func (g *Game) Run(gp *GamePool) {
 			if client == nil {
 			}
 
-			g.player1.send <- []byte("Hello")
-			g.player2.send <- []byte("Hello")
+			gameAbortedMessage := DataMessage[GameAbort]{
+				Type: "game_abort",
+				Data: GameAbort{},
+			}
+			gameAbortedMessageString, err := gameAbortedMessage.Marshal()
 
-			gp.close_game <- g
-
-		case action := <-g.make_action:
-			if action.player != g.active_player {
+			if err != nil {
+				slog.Error("Error marshalling game abort data.")
 				continue
 			}
 
-			is_active_player_player1 := action.player == g.player1
+			g.player1.send <- []byte(gameAbortedMessageString)
+			g.player2.send <- []byte(gameAbortedMessageString)
 
-			var new_state int
-			if is_active_player_player1 {
-				new_state = 1
-			} else {
-				new_state = 2
+			gp.closeGame <- g
+
+		case action := <-g.makeAction:
+			if action.player != g.activePlayer {
+				continue
 			}
 
-			next_board := g.board
-			next_board[action.x][action.y] = new_state
-			winnerData := checkBoardForWin(next_board)
+			isActivePlayerPlayer1 := action.player == g.player1
 
-			isValidMove := checkForMoveValidity(winnerData, action, g.board, next_board)
+			var newState int
+			if isActivePlayerPlayer1 {
+				newState = 1
+			} else {
+				newState = 2
+			}
+
+			nextBoard := g.board
+			nextBoard[action.x][action.y] = newState
+			winnerData := checkBoardForWin(nextBoard)
+
+			isValidMove := checkForMoveValidity(winnerData, action, g.board, nextBoard)
 
 			if !isValidMove {
 				continue
 			}
 
-			g.board = next_board
+			g.board = nextBoard
 
+			if checkDraw(g.board) {
+				gameEndMessage := DataMessage[GameEnd]{
+					Type: "game_end",
+					Data: GameEnd{
+						Winner: "draw",
+						Coords: nil,
+					},
+				}
+
+				gameEndMessageString, err := gameEndMessage.Marshal()
+
+				if err != nil {
+
+					slog.Error("Error marshalling game end data.")
+					continue
+				}
+
+				g.player1.send <- []byte(gameEndMessageString)
+				g.player2.send <- []byte(gameEndMessageString)
+			}
 			// Switch active player
-			if is_active_player_player1 {
-				g.active_player = g.player2
+			if isActivePlayerPlayer1 {
+				g.activePlayer = g.player2
 			} else {
-				g.active_player = g.player1
+				g.activePlayer = g.player1
 			}
 
-			if err := sendGameUpdate(action, new_state, g); err != nil {
+			if err := sendGameUpdate(action, newState, g); err != nil {
 				slog.Error("Error sending game update.")
 				continue
 			}
@@ -143,28 +176,40 @@ func (g *Game) Run(gp *GamePool) {
 					Type: "game_end",
 					Data: GameEnd{
 						Winner: winner,
-						Coords: winnerData.coords,
+						Coords: &winnerData.coords,
 					},
 				}
 
-				dataEndMessageString, err := json.Marshal(gameEndMessage)
+				gameEndMessageString, err := gameEndMessage.Marshal()
 
 				if err != nil {
 					slog.Error("Error marshalling game end data.")
 					continue
 				}
 
-				g.player1.send <- []byte(dataEndMessageString)
-				g.player2.send <- []byte(dataEndMessageString)
+				g.player1.send <- []byte(gameEndMessageString)
+				g.player2.send <- []byte(gameEndMessageString)
 
-				gp.close_game <- g
+				gp.closeGame <- g
 			}
 
 		}
 	}
 }
 
-func checkForMoveValidity(winnerData *BoardWinData, action GameAction, board [4][4]int, next_board [4][4]int) bool {
+func checkDraw(board [4][4]int) bool {
+	for x := 0; x < 4; x++ {
+		for y := 0; y < 4; y++ {
+			if board[x][y] == 0 {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func checkForMoveValidity(winnerData *BoardWinData, action GameAction, board [4][4]int, nextBoard [4][4]int) bool {
 
 	if board[action.x][action.y] != 0 {
 		return false
@@ -187,10 +232,10 @@ func checkForMoveValidity(winnerData *BoardWinData, action GameAction, board [4]
 	// e.g. if the player is trying to place their tick in (1, 1),
 	// and the opponent has placed their tick in (0, 1), (2, 1), (1, 0), or (1, 2),
 	// then the move is valid
-	if (action.x == 0 || next_board[action.x-1][action.y] != opponent) &&
-		(action.x == 3 || next_board[action.x+1][action.y] != opponent) &&
-		(action.y == 0 || next_board[action.x][action.y-1] != opponent) &&
-		(action.y == 3 || next_board[action.x][action.y+1] != opponent) {
+	if (action.x == 0 || nextBoard[action.x-1][action.y] != opponent) &&
+		(action.x == 3 || nextBoard[action.x+1][action.y] != opponent) &&
+		(action.y == 0 || nextBoard[action.x][action.y-1] != opponent) &&
+		(action.y == 3 || nextBoard[action.x][action.y+1] != opponent) {
 		return false
 	}
 
@@ -204,18 +249,18 @@ func sendGameUpdate(action GameAction, new_state int, g *Game) error {
 			X:            action.x,
 			Y:            action.y,
 			State:        new_state,
-			ActivePlayer: g.active_player.id,
+			ActivePlayer: g.activePlayer.id,
 		}}
 
-	dataUpdateMessageString, err := json.Marshal(gameUpdateMessage)
+	gameUpdateMessageString, err := gameUpdateMessage.Marshal()
 
 	if err != nil {
 		slog.Error("Error marshalling game update data.")
 		return err
 	}
 
-	g.player1.send <- []byte(dataUpdateMessageString)
-	g.player2.send <- []byte(dataUpdateMessageString)
+	g.player1.send <- []byte(gameUpdateMessageString)
+	g.player2.send <- []byte(gameUpdateMessageString)
 
 	return nil
 }

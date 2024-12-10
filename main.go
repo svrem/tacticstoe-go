@@ -24,11 +24,11 @@ func main() {
 	database := db.OpenDatabase()
 	db.MigrateModel(database)
 
-	game_pool := ws_service.NewGamePool()
-	go game_pool.Run()
+	gamePool := ws_service.NewGamePool()
+	go gamePool.Run()
 
 	queue := ws_service.NewQueue()
-	go queue.Run(game_pool)
+	go queue.Run(gamePool)
 
 	http.HandleFunc("/", getRoot)
 

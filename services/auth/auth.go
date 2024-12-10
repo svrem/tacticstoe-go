@@ -33,11 +33,11 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) 
 	switch provider {
 	case "google":
 		gh := newGoogleHandler()
-		if google_user, err := gh.handleCallback(w, r); err != nil {
+		if googleUser, err := gh.handleCallback(w, r); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else {
-			user = google_user
+			user = googleUser
 		}
 
 	default:
@@ -47,12 +47,12 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) 
 
 	db.CreateUser(database, user)
 
-	csrf_token := uuid.New().String()
-	jwt_token := generateJWT(user, csrf_token)
+	csrfToken := uuid.New().String()
+	jwtToken := generateJWT(user, csrfToken)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
-		Value:    jwt_token,
+		Value:    jwtToken,
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
@@ -62,7 +62,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) 
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "csrf_token",
-		Value:    csrf_token,
+		Value:    csrfToken,
 		Expires:  time.Now().Add(expiration),
 		Secure:   true,
 		HttpOnly: false,
@@ -74,15 +74,15 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) 
 }
 
 func MeHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) {
-	crsf_token := r.Header.Get("X-CSRF-TOKEN")
-	jwt_token, err := r.Cookie("jwt")
+	crsfToken := r.Header.Get("X-CSRF-TOKEN")
+	jwtToken, err := r.Cookie("jwt")
 
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	user, err := parseJWTToUser(database, jwt_token.Value, crsf_token)
+	user, err := parseJWTToUser(database, jwtToken.Value, crsfToken)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

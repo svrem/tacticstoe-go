@@ -7,7 +7,7 @@ type GamePool struct {
 
 	register chan [2]*Client
 
-	close_game chan *Game
+	closeGame chan *Game
 }
 
 func (gp *GamePool) Run() {
@@ -21,15 +21,15 @@ func (gp *GamePool) Run() {
 
 			slog.Info("Registering new Game")
 
-			new_game := newGame(clients[0], clients[1])
-			gp.games = append(gp.games, new_game)
+			newGame := newGame(clients[0], clients[1])
+			gp.games = append(gp.games, newGame)
 
-			clients[0].game = &new_game
-			clients[1].game = &new_game
+			clients[0].game = &newGame
+			clients[1].game = &newGame
 
-			go new_game.Run(gp)
+			go newGame.Run(gp)
 
-		case game := <-gp.close_game:
+		case game := <-gp.closeGame:
 			for i, g := range gp.games {
 				if g.id == game.id {
 					slog.Info("Closing game.")
@@ -54,6 +54,6 @@ func NewGamePool() *GamePool {
 
 		register: make(chan [2]*Client),
 
-		close_game: make(chan *Game),
+		closeGame: make(chan *Game),
 	}
 }

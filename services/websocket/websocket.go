@@ -1,7 +1,6 @@
 package websocket_service
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -26,41 +25,30 @@ func ServeWs(queue Queue, w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &Client{
-		conn:       conn,
-		elo_rating: 1000,
-		send:       make(chan []byte, 256),
-		id:         uuid.New().String(),
+		conn:      conn,
+		eloRating: 1000,
+		send:      make(chan []byte, 256),
+		id:        uuid.New().String(),
 	}
 	queue.register <- client
 
 	joinData := JoinData{
 		Id: client.id,
 	}
-	joinMessage, err := json.Marshal(DataMessage[JoinData]{
+	joinMessage := DataMessage[JoinData]{
 		Type: "join",
 		Data: joinData,
-	})
+	}
+
+	joinMessageString, err := joinMessage.Marshal()
 
 	if err != nil {
 		slog.Error("wsHandler: " + err.Error())
 		return
 	}
 
-	client.send <- joinMessage
+	client.send <- joinMessageString
 
 	go client.writePump()
 	go client.readPump()
-
-	// for {
-	// 	messageType, data, err := conn.ReadMessage()
-	// 	if err != nil {
-	// 		slog.Error("wsHandler: " + err.Error())
-	// 		return
-	// 	}
-
-	// 	err = conn.WriteMessage(messageType, data)
-	// 	if err != nil {
-	// 		slog.Error("wsHandler: " + err.ha
-	// 	}
-	// }
 }

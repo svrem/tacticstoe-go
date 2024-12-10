@@ -10,11 +10,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func generateJWT(user *db.User, csrf_token string) string {
+func generateJWT(user *db.User, csrfToken string) string {
 	claims := jwt.MapClaims{
 		"user_id":         user.ID,
 		"exp":             time.Now().Add(expiration).Unix(),
-		"csrf":            csrf_token,
+		"csrf":            csrfToken,
 		"username":        user.Username,
 		"profile_picture": user.ProfilePicture,
 	}
@@ -30,7 +30,7 @@ func generateJWT(user *db.User, csrf_token string) string {
 	return signedToken
 }
 
-func parseJWTToUser(database *gorm.DB, tokenString string, csrf_token string) (*db.User, error) {
+func parseJWTToUser(database *gorm.DB, tokenString string, csrfToken string) (*db.User, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -46,13 +46,13 @@ func parseJWTToUser(database *gorm.DB, tokenString string, csrf_token string) (*
 		return nil, err
 	}
 
-	if claims["csrf"] != csrf_token {
+	if claims["csrf"] != csrfToken {
 		slog.Error("CSRF token mismatch")
 		return nil, err
 	}
 
-	user_id := uint(claims["user_id"].(float64))
-	user := db.GetUserByID(database, user_id)
+	userId := uint(claims["user_id"].(float64))
+	user := db.GetUserByID(database, userId)
 
 	return user, nil
 }
