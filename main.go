@@ -21,6 +21,7 @@ func main() {
 		return
 	}
 
+	// Utils
 	database := db.OpenDatabase()
 	db.MigrateModel(database)
 
@@ -30,6 +31,7 @@ func main() {
 	queue := ws_service.NewQueue()
 	go queue.Run(gamePool)
 
+	// Routes
 	http.HandleFunc("/", getRoot)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {

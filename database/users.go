@@ -6,8 +6,11 @@ func CreateUser(db *gorm.DB, user *User) {
 	db.Create(user)
 }
 
-func GetUserByID(db *gorm.DB, id uint) *User {
+func GetUserByID(db *gorm.DB, userId uint) *User {
 	var user User
-	db.First(&user, id)
+	if err := db.First(&user, userId).Error; err != nil {
+		return nil
+	}
+
 	return &user
 }

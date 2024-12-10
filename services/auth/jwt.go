@@ -30,29 +30,29 @@ func generateJWT(user *db.User, csrfToken string) string {
 	return signedToken
 }
 
-func parseJWTToUser(database *gorm.DB, tokenString string, csrfToken string) (*db.User, error) {
+func parseJWTToUser(database *gorm.DB, tokenString string, csrfToken string) *db.User {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 
 	if err != nil {
 		slog.Error("Failed to parse token: " + err.Error())
-		return nil, err
+		return nil
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		slog.Error("Failed to parse claims")
-		return nil, err
+		return nil
 	}
 
 	if claims["csrf"] != csrfToken {
 		slog.Error("CSRF token mismatch")
-		return nil, err
+		return nil
 	}
 
 	userId := uint(claims["user_id"].(float64))
 	user := db.GetUserByID(database, userId)
 
-	return user, nil
+	return user
 }

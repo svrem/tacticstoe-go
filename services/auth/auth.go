@@ -82,10 +82,10 @@ func MeHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) {
 		return
 	}
 
-	user, err := parseJWTToUser(database, jwtToken.Value, crsfToken)
+	user := parseJWTToUser(database, jwtToken.Value, crsfToken)
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if user == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 
