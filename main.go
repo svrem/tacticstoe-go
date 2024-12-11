@@ -42,6 +42,7 @@ func main() {
 		auth_service.MeHandler(w, r, database)
 	})
 	http.HandleFunc("GET /auth/login/{provider}/", auth_service.LoginHandler)
+	http.HandleFunc("GET /auth/logout/", auth_service.LogoutHandler)
 	http.HandleFunc("GET /auth/callback/{provider}/", func(w http.ResponseWriter, r *http.Request) {
 		auth_service.CallbackHandler(w, r, database)
 	})

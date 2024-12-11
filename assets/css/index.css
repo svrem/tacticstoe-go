@@ -108,7 +108,6 @@ main {
     aspect-ratio: 1;
 
     border-radius: 9999999px;
-    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
     object-fit: cover;
 
     margin: auto auto;

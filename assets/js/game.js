@@ -1,9 +1,5 @@
 const game_container = document.getElementById("game-container");
 
-document
-  .getElementById("queue-button")
-  .addEventListener("click", () => openSocket());
-
 function openSocket() {
   const socket = new WebSocket("/ws");
 
@@ -123,3 +119,18 @@ function initializeGame(server_message, game_state) {
 
   game_state.active_player = server_message.data.starting_player;
 }
+
+window.Auth.onAuthChange((user) => {
+  const play_online_button = document.getElementById("play-online-button");
+
+  if (user) {
+    console.log("User is authenticated");
+    play_online_button.onclick = () => {
+      openSocket();
+    };
+  } else {
+    play_online_button.onclick = () => {
+      window.Auth.login();
+    };
+  }
+});

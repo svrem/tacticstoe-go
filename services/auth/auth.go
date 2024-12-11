@@ -26,6 +26,30 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Unix(0, 0),
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "csrf_token",
+		Value:    "",
+		Expires:  time.Now().Add(expiration),
+		Path:     "/",
+		Secure:   true,
+		HttpOnly: false,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+}
+
 func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) {
 	provider := r.PathValue("provider")
 
@@ -85,6 +109,27 @@ func MeHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) {
 	user := parseJWTToUser(database, jwtToken.Value, crsfToken)
 
 	if user == nil {
+		// delete cookie
+		http.SetCookie(w, &http.Cookie{
+			Name:     "jwt",
+			Value:    "",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			Expires:  time.Unix(0, 0),
+			Path:     "/",
+		})
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "csrf_token",
+			Value:    "",
+			Expires:  time.Now().Add(expiration),
+			Secure:   true,
+			HttpOnly: false,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+		})
+
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
