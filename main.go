@@ -17,8 +17,7 @@ func getRoot(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
-		slog.Error("Error loading .env file")
-		return
+		slog.Warn("No .env file found")
 	}
 
 	// Utils
