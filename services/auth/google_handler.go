@@ -66,8 +66,6 @@ func (gh *GoogleHandler) handleCallback(w http.ResponseWriter, r *http.Request) 
 		return nil, err
 	}
 
-	println("User: ", user.GivenName, user.Name, user.Picture, user.Id)
-
 	return &AuthUser{
 		Username:       user.Name,
 		ProfilePicture: user.Picture,

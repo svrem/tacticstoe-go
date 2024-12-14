@@ -1,5 +1,7 @@
 package websocket_service
 
+import "log/slog"
+
 type Hub struct {
 	clients map[*Client]bool
 
@@ -27,21 +29,35 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
-			println("Registering client")
-			h.clients[client] = true
 			client.hub = h
+
+			clientAlreadyRegistered := false
+			for c := range h.clients {
+				if c.id == client.id {
+					slog.Info("Client already registered, ignoring...")
+
+					close(client.send)
+
+					clientAlreadyRegistered = true
+					break
+				}
+			}
+			if clientAlreadyRegistered {
+				continue
+			}
+
+			h.clients[client] = true
 			queue.register <- client
 
 		case client := <-h.unregister:
-			println("Unregistering client")
 			if _, ok := h.clients[client]; ok {
 				gamePool.unregister <- client
-				println("Unregistering client from game pool")
 				queue.unregister <- client
-				println("Unregistering client from queue")
 
 				delete(h.clients, client)
 				close(client.send)
+
+				client.conn.Close()
 			}
 		}
 	}

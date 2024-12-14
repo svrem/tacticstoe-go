@@ -41,7 +41,6 @@ func GetUserByID(db *gorm.DB, userId string) *User {
 		ID: userId,
 	}
 	if err := db.First(&user).Error; err != nil {
-		println("err", err.Error())
 		return nil
 	}
 

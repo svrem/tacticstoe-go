@@ -55,7 +55,6 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, database *gorm.DB
 		slog.Error("wsHandler: " + err.Error())
 		return
 	}
-
 	client.send <- joinMessageString
 
 	go client.writePump()
