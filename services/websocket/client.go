@@ -48,8 +48,8 @@ type Client struct {
 	id string
 
 	queue *Queue
-
-	game *Game
+	hub   *Hub
+	game  *Game
 
 	send chan []byte
 }
@@ -57,12 +57,7 @@ type Client struct {
 func (c *Client) readPump() {
 	defer func() {
 		slog.Info("Closing readPump, id: " + c.id)
-		if c.game != nil {
-			c.game.unregister <- c
-		}
-		if c.queue != nil {
-			c.queue.unregister <- c
-		}
+		c.hub.unregister <- c
 		c.conn.Close()
 	}()
 

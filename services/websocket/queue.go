@@ -24,12 +24,15 @@ func (q *Queue) Run(gp *GamePool) {
 	for {
 		select {
 		case client := <-q.register:
+
 			q.clients[client] = true
 			client.queue = q
 
 			if len(q.clients) < 2 {
 				continue
 			}
+
+			slog.Info("Registering two players to the game pool.")
 
 			// get two players from the clients map
 			var players []*Client

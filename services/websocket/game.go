@@ -104,7 +104,7 @@ func (g *Game) Run(gp *GamePool) {
 			g.player1.send <- []byte(gameAbortedMessageString)
 			g.player2.send <- []byte(gameAbortedMessageString)
 
-			gp.closeGame <- g
+			gp.unregister <- client
 
 		case action := <-g.makeAction:
 			if action.player != g.activePlayer {
@@ -190,7 +190,6 @@ func (g *Game) Run(gp *GamePool) {
 				g.player1.send <- []byte(gameEndMessageString)
 				g.player2.send <- []byte(gameEndMessageString)
 
-				gp.closeGame <- g
 			}
 
 		}
