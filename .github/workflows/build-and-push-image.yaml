@@ -46,4 +46,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/dreamsofcode-io/guestbook:${{ needs.commit-hash.outputs.commit_hash }}
+          tags: ghcr.io/svrem/tacticstoe-go:${{ needs.commit-hash.outputs.commit_hash }}
