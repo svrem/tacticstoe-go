@@ -29,13 +29,13 @@ func (gp *GamePool) Run() {
 			go newGame.Run(gp)
 
 		case client := <-gp.unregister:
-			println("Unregistering client gp")
 			for i, g := range gp.games {
 				if g.player1 == client || g.player2 == client {
-					slog.Info("Unregistering client from game.")
-
-					g.player1.hub.unregister <- g.player1
-					g.player2.hub.unregister <- g.player2
+					if client != g.player1 {
+						g.player1.hub.unregister <- g.player1
+					} else {
+						g.player2.hub.unregister <- g.player2
+					}
 
 					gp.games = append(gp.games[:i], gp.games[i+1:]...)
 

@@ -2,6 +2,7 @@ package websocket_service
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -190,6 +191,9 @@ func (g *Game) Run(gp *GamePool) {
 				g.player1.send <- []byte(gameEndMessageString)
 				g.player2.send <- []byte(gameEndMessageString)
 
+				time.Sleep(500 * time.Millisecond)
+
+				g.player1.hub.unregister <- g.player1
 			}
 
 		}
