@@ -6,13 +6,19 @@ import (
 	db "tacticstoe/database"
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 const (
 	expiration = 7 * 24 * time.Hour
 )
+
+type AuthUser struct {
+	Username       string
+	ProfilePicture string
+	Provider       string
+	ProviderId     string
+}
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	provider := r.PathValue("provider")
@@ -28,7 +34,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
+		Name:     "token",
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
@@ -37,23 +43,13 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Unix(0, 0),
 	})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "csrf_token",
-		Value:    "",
-		Expires:  time.Now().Add(expiration),
-		Path:     "/",
-		Secure:   true,
-		HttpOnly: false,
-		SameSite: http.SameSiteStrictMode,
-	})
-
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) {
 	provider := r.PathValue("provider")
 
-	var user *db.User
+	var authUser *AuthUser
 	switch provider {
 	case "google":
 		gh := newGoogleHandler()
@@ -61,7 +57,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) 
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else {
-			user = googleUser
+			authUser = googleUser
 		}
 
 	default:
@@ -69,13 +65,17 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) 
 		return
 	}
 
-	db.CreateUser(database, user)
+	user, err := db.CreateUser(database, authUser.Username, authUser.ProfilePicture, authUser.Provider, authUser.ProviderId)
 
-	csrfToken := uuid.New().String()
-	jwtToken := generateJWT(user, csrfToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jwtToken := generateJWT(user)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
+		Name:     "token",
 		Value:    jwtToken,
 		HttpOnly: true,
 		Secure:   true,
@@ -84,34 +84,23 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) 
 		Path:     "/",
 	})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "csrf_token",
-		Value:    csrfToken,
-		Expires:  time.Now().Add(expiration),
-		Secure:   true,
-		HttpOnly: false,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-	})
-
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
-func MeHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) {
-	crsfToken := r.Header.Get("X-CSRF-TOKEN")
-	jwtToken, err := r.Cookie("jwt")
+func AutherizeUser(w http.ResponseWriter, r *http.Request, database *gorm.DB) *db.User {
+	jwtToken, err := r.Cookie("token")
 
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+		return nil
 	}
 
-	user := parseJWTToUser(database, jwtToken.Value, crsfToken)
+	user := parseJWTToUser(database, jwtToken.Value)
 
 	if user == nil {
 		// delete cookie
 		http.SetCookie(w, &http.Cookie{
-			Name:     "jwt",
+			Name:     "token",
 			Value:    "",
 			HttpOnly: true,
 			Secure:   true,
@@ -120,17 +109,17 @@ func MeHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) {
 			Path:     "/",
 		})
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     "csrf_token",
-			Value:    "",
-			Expires:  time.Now().Add(expiration),
-			Secure:   true,
-			HttpOnly: false,
-			SameSite: http.SameSiteStrictMode,
-			Path:     "/",
-		})
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return nil
+	}
 
-		http.Error(w, "Not found", http.StatusNotFound)
+	return user
+}
+
+func MeHandler(w http.ResponseWriter, r *http.Request, database *gorm.DB) {
+	user := AutherizeUser(w, r, database)
+
+	if user == nil {
 		return
 	}
 

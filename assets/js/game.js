@@ -124,7 +124,6 @@ window.Auth.onAuthChange((user) => {
   const play_online_button = document.getElementById("play-online-button");
 
   if (user) {
-    console.log("User is authenticated");
     play_online_button.onclick = () => {
       openSocket();
     };

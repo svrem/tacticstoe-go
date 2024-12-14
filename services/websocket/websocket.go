@@ -3,9 +3,10 @@ package websocket_service
 import (
 	"log/slog"
 	"net/http"
+	auth_service "tacticstoe/services/auth"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"gorm.io/gorm"
 )
 
 type JoinData struct {
@@ -17,7 +18,15 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func ServeWs(queue Queue, w http.ResponseWriter, r *http.Request) {
+func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, database *gorm.DB) {
+	slog.Info("wsHandler: ServeWs")
+	user := auth_service.AutherizeUser(w, r, database)
+
+	if user == nil {
+		slog.Info("wsHandler: Unauthorized")
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		slog.Error("wsHandler: " + err.Error())
@@ -28,9 +37,9 @@ func ServeWs(queue Queue, w http.ResponseWriter, r *http.Request) {
 		conn:      conn,
 		eloRating: 1000,
 		send:      make(chan []byte, 256),
-		id:        uuid.New().String(),
+		id:        user.ID,
 	}
-	queue.register <- client
+	hub.register <- client
 
 	joinData := JoinData{
 		Id: client.id,

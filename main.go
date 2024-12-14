@@ -25,17 +25,14 @@ func main() {
 	database := db.OpenDatabase()
 	db.MigrateModel(database)
 
-	gamePool := ws_service.NewGamePool()
-	go gamePool.Run()
-
-	queue := ws_service.NewQueue()
-	go queue.Run(gamePool)
+	hub := ws_service.NewHub()
+	go hub.Run()
 
 	// Routes
 	http.HandleFunc("/", getRoot)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws_service.ServeWs(*queue, w, r)
+		ws_service.ServeWs(hub, w, r, database)
 	})
 
 	http.HandleFunc("GET /auth/me/", func(w http.ResponseWriter, r *http.Request) {

@@ -27,26 +27,7 @@ class Auth {
   }
 
   async loadUserData() {
-    const splitCookie = document.cookie.split(";");
-    const crsfTokenFull = splitCookie.find((cookie) =>
-      cookie.includes("csrf_token")
-    );
-
-    if (!crsfTokenFull) {
-      return;
-    }
-
-    const crsfToken = crsfTokenFull.split("=").at(1);
-
-    if (!crsfToken) {
-      return;
-    }
-
-    const userRes = await fetch("/auth/me", {
-      headers: {
-        "X-CSRF-TOKEN": crsfToken,
-      },
-    });
+    const userRes = await fetch("/auth/me");
 
     if (!userRes.ok) {
       return;

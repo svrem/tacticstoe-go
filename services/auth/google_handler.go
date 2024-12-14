@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	db "tacticstoe/database"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -44,7 +43,7 @@ func (gh *GoogleHandler) GetAuthURL() string {
 	return gh.oauth2conf.AuthCodeURL("state")
 }
 
-func (gh *GoogleHandler) handleCallback(w http.ResponseWriter, r *http.Request) (*db.User, error) {
+func (gh *GoogleHandler) handleCallback(w http.ResponseWriter, r *http.Request) (*AuthUser, error) {
 	code := r.URL.Query().Get("code")
 
 	t, err := gh.oauth2conf.Exchange(context.Background(), code)
@@ -67,10 +66,12 @@ func (gh *GoogleHandler) handleCallback(w http.ResponseWriter, r *http.Request) 
 		return nil, err
 	}
 
-	return &db.User{
-		ProviderId:     user.Id,
-		Provider:       "google",
-		Username:       user.GivenName,
+	println("User: ", user.GivenName, user.Name, user.Picture, user.Id)
+
+	return &AuthUser{
+		Username:       user.Name,
 		ProfilePicture: user.Picture,
+		Provider:       "google",
+		ProviderId:     user.Id,
 	}, nil
 }
