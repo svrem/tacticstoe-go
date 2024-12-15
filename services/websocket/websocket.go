@@ -34,10 +34,13 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, database *gorm.DB
 	}
 
 	client := &Client{
-		conn:      conn,
-		eloRating: 1000,
-		send:      make(chan []byte, 256),
-		id:        user.ID,
+		conn: conn,
+		send: make(chan []byte, 256),
+
+		id:             user.ID,
+		profilePicture: user.ProfilePicture,
+		username:       user.Username,
+		eloRating:      user.ELO_Rating,
 	}
 	hub.register <- client
 

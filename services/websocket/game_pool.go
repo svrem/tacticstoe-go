@@ -1,9 +1,12 @@
 package websocket_service
 
-import "log/slog"
+import (
+	"log/slog"
+	"time"
+)
 
 type GamePool struct {
-	games []Game
+	games []*Game
 
 	register   chan [2]*Client
 	unregister chan *Client
@@ -23,17 +26,40 @@ func (gp *GamePool) Run() {
 			newGame := newGame(players[0], players[1])
 			gp.games = append(gp.games, newGame)
 
-			players[0].game = &newGame
-			players[1].game = &newGame
+			players[0].game = newGame
+			players[1].game = newGame
 
 			go newGame.Run(gp)
 
 		case client := <-gp.unregister:
 			for i, g := range gp.games {
 				if g.player1 == client || g.player2 == client {
+					type GameAbort struct {
+					}
+
+					gameAbortedMessage := DataMessage[GameAbort]{
+						Type: "game_abort",
+						Data: GameAbort{},
+					}
+
+					gameAbortedMessageString, err := gameAbortedMessage.Marshal()
+
+					if err != nil {
+						slog.Error("Error marshalling game abort data.")
+						continue
+					}
+
 					if client != g.player1 {
+						g.player1.send <- []byte(gameAbortedMessageString)
+
+						time.Sleep(500 * time.Millisecond)
+
 						g.player1.hub.unregister <- g.player1
 					} else {
+						g.player2.send <- []byte(gameAbortedMessageString)
+
+						time.Sleep(500 * time.Millisecond)
+
 						g.player2.hub.unregister <- g.player2
 					}
 
@@ -48,7 +74,7 @@ func (gp *GamePool) Run() {
 
 func NewGamePool() *GamePool {
 	return &GamePool{
-		games: make([]Game, 0),
+		games: make([]*Game, 0),
 
 		register:   make(chan [2]*Client),
 		unregister: make(chan *Client),

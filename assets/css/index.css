@@ -10,7 +10,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  /* gap: 2rem; */
   padding: 1.2rem;
 }
 
@@ -261,6 +261,26 @@ main {
     & > button:hover {
       background-color: hsl(0, 0%, 30%);
     }
+  }
+}
+
+.player-info {
+  height: 3rem;
+
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+
+  display: flex;
+  gap: 1rem;
+
+  & > img {
+    height: 100%;
+    aspect-ratio: 1;
+  }
+
+  & > div {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
   }
 }
 

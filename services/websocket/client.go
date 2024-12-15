@@ -43,7 +43,9 @@ type ClientActionsData struct {
 type Client struct {
 	conn *websocket.Conn
 
-	eloRating int
+	eloRating      int
+	profilePicture string
+	username       string
 
 	id string
 

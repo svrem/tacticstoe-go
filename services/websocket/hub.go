@@ -50,6 +50,7 @@ func (h *Hub) Run() {
 			queue.register <- client
 
 		case client := <-h.unregister:
+			println("Hub: Unregistering client")
 			if _, ok := h.clients[client]; ok {
 				gamePool.unregister <- client
 				queue.unregister <- client

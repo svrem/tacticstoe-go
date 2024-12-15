@@ -9,9 +9,10 @@ import (
 
 type GameStart struct {
 	StartingPlayer string `json:"starting_player"`
-}
 
-type GameAbort struct {
+	OpponentPicture  string `json:"opponent_picture"`
+	OpponentUsername string `json:"opponent_username"`
+	OpponentElo      int    `json:"opponent_elo"`
 }
 
 type GameUpdate struct {
@@ -46,26 +47,45 @@ type Game struct {
 	unregister chan *Client
 }
 
-func newGame(player1 *Client, player2 *Client) Game {
+func createStartMessage(startingPlayerId string, receiver *Client, opponent *Client) ([]byte, error) {
 	gameJoinDataMessage := DataMessage[GameStart]{
 		Type: "game_start",
+
 		Data: GameStart{
-			StartingPlayer: player1.id,
+			StartingPlayer: startingPlayerId,
+
+			OpponentPicture:  opponent.profilePicture,
+			OpponentUsername: opponent.username,
+			OpponentElo:      opponent.eloRating,
 		},
 	}
-	data, err := gameJoinDataMessage.Marshal()
+
+	return gameJoinDataMessage.Marshal()
+}
+
+func newGame(player1 *Client, player2 *Client) *Game {
+	data, err := createStartMessage(player1.id, player1, player2)
+
 	if err != nil {
-		slog.Error("Error marshalling game start data.")
-		return Game{}
+		slog.Error("Error creating game start message.")
+		return nil
 	}
 
 	player1.send <- []byte(data)
+
+	data, err = createStartMessage(player1.id, player2, player1)
+
+	if err != nil {
+		slog.Error("Error creating game start message.")
+		return nil
+	}
+
 	player2.send <- []byte(data)
 
 	player1.queue = nil
 	player2.queue = nil
 
-	return Game{
+	return &Game{
 		id: uuid.New().String(),
 
 		player1: player1,
@@ -83,30 +103,6 @@ func newGame(player1 *Client, player2 *Client) Game {
 func (g *Game) Run(gp *GamePool) {
 	for {
 		select {
-		case client := <-g.unregister:
-			defer func() {
-				recover()
-			}()
-
-			if client == nil {
-			}
-
-			gameAbortedMessage := DataMessage[GameAbort]{
-				Type: "game_abort",
-				Data: GameAbort{},
-			}
-			gameAbortedMessageString, err := gameAbortedMessage.Marshal()
-
-			if err != nil {
-				slog.Error("Error marshalling game abort data.")
-				continue
-			}
-
-			g.player1.send <- []byte(gameAbortedMessageString)
-			g.player2.send <- []byte(gameAbortedMessageString)
-
-			gp.unregister <- client
-
 		case action := <-g.makeAction:
 			if action.player != g.activePlayer {
 				continue

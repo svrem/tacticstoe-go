@@ -2,10 +2,10 @@ class Auth {
   constructor() {
     this.user = null;
 
-    self.onAuthChangeCallbacks = [];
+    this.onAuthChangeCallbacks = [];
 
     this.loadUserData().then(() => {
-      self.onAuthChangeCallbacks.forEach((cb) => cb(self.user));
+      this.onAuthChangeCallbacks.forEach((cb) => cb(this.user));
     });
   }
 
@@ -22,8 +22,8 @@ class Auth {
   }
 
   onAuthChange(cb) {
-    cb(self.user);
-    self.onAuthChangeCallbacks.push(cb);
+    cb(this.user);
+    this.onAuthChangeCallbacks.push(cb);
   }
 
   async loadUserData() {
@@ -35,7 +35,7 @@ class Auth {
 
     const userData = await userRes.json();
 
-    self.user = userData;
+    this.user = userData;
   }
 }
 

@@ -48,13 +48,13 @@ class GameContainer extends HTMLElement {
     this.id = "game-container";
 
     this.innerHTML = `
-      <div class="game-info">
+      <div class="player-info" id="opponent-info">
       </div>
 
       <div class="game-board" id="game-board">
       </div>
 
-      <div class="game-info">
+      <div class="player-info" id="player-info">
       </div>
     `;
 
@@ -214,6 +214,17 @@ function handleWebSocketMessage(event, game_state) {
       break;
 
     case "join":
+      const player_info = document.getElementById("player-info");
+
+      player_info.innerHTML = `
+        <img src="${window.Auth.user.profile_picture}" alt="Player Profile Picture" onerror="window.onProfilePictureError(event)" />
+        
+        <div>
+          <h3>${window.Auth.user.username}</h3>
+          <p>${window.Auth.user.elo_rating}</p>
+        </div>
+      `;
+
       game_state.player_id = server_message.data.id;
       break;
 
@@ -225,6 +236,16 @@ function handleWebSocketMessage(event, game_state) {
       handleGameEnd(server_message, game_state);
 
       break;
+
+    case "game_abort":
+      game_container.showModal(
+        "You Won!",
+        "Your opponent has left the game, you win! Your ELO has increased by 10 points!"
+      );
+      break;
+
+    default:
+      console.error("Unknown message type: ", server_message.type);
   }
 }
 function handleGameEnd(server_message, game_state) {
@@ -255,6 +276,17 @@ function initializeGame(server_message, game_state) {
     "data-player-turn",
     server_message.data.starting_player === game_state.player_id
   );
+
+  const opponent_info = document.querySelector("#opponent-info");
+
+  opponent_info.innerHTML = `
+    <img src="${server_message.data.opponent_picture}" alt="Opponent Profile Picture" onerror="window.onProfilePictureError(event)" />
+
+    <div>
+      <h3>${server_message.data.opponent_username}</h3>
+      <p>${server_message.data.opponent_elo}</p>
+    </div>
+  `;
 
   game_state.active_player = server_message.data.starting_player;
 }
