@@ -1,6 +1,62 @@
-const game_container = document.getElementById("game-container");
+class GameContainer extends HTMLElement {
+  constructor() {
+    super();
+
+    this.cellCallbacks = [];
+
+    this.classList.add("game-container");
+    this.id = "game-container";
+
+    this.reset();
+  }
+
+  onCellClick(callback) {
+    this.cellCallbacks.push(callback);
+  }
+
+  handleCellClick = (e) => {
+    const cell_index = e.target.getAttribute("data-cell");
+
+    const x = cell_index % 4;
+    const y = Math.floor(cell_index / 4);
+
+    this.cellCallbacks.forEach((callback) => {
+      callback({ x, y });
+    });
+  };
+
+  reset() {
+    while (this.firstChild) {
+      this.removeChild(this.firstChild);
+    }
+
+    this.removeAttribute("data-draw");
+    this.removeAttribute("data-player-winner");
+    this.removeAttribute("data-player-turn");
+
+    this.cellCallbacks = [];
+
+    for (let i = 0; i < 16; i++) {
+      const cell = document.createElement("button");
+
+      cell.setAttribute("data-cell", i);
+      cell.classList.add("cell");
+      cell.addEventListener("click", this.handleCellClick);
+
+      this.appendChild(cell);
+    }
+  }
+}
+
+customElements.define("game-container", GameContainer);
+
+let game_container = document.getElementById("game-container");
 
 function openSocket() {
+  game_container = document.getElementById("game-container");
+
+  game_container.reset();
+
   const socket = new WebSocket("/ws");
 
   const game_state = {
@@ -15,12 +71,7 @@ function openSocket() {
     handleWebSocketMessage(event, game_state);
   };
 
-  function handleCellClick(e) {
-    const cell_index = e.target.getAttribute("data-cell");
-
-    const x = cell_index % 4;
-    const y = Math.floor(cell_index / 4);
-
+  game_container.onCellClick(({ x, y }) => {
     socket.send(
       JSON.stringify({
         type: "action",
@@ -30,11 +81,7 @@ function openSocket() {
         },
       })
     );
-  }
-
-  for (const cell of game_container.children) {
-    cell.addEventListener("click", handleCellClick);
-  }
+  });
 }
 
 function handleWebSocketMessage(event, game_state) {
