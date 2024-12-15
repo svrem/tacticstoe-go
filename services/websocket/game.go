@@ -39,12 +39,13 @@ type Game struct {
 	player1 *Client
 	player2 *Client
 
+	isOver bool
+
 	board [4][4]int
 
 	activePlayer *Client
 
 	makeAction chan GameAction
-	unregister chan *Client
 }
 
 func createStartMessage(startingPlayerId string, receiver *Client, opponent *Client) ([]byte, error) {
@@ -96,7 +97,6 @@ func newGame(player1 *Client, player2 *Client) *Game {
 		activePlayer: player1,
 
 		makeAction: make(chan GameAction),
-		unregister: make(chan *Client),
 	}
 }
 
@@ -146,6 +146,8 @@ func (g *Game) Run(gp *GamePool) {
 					continue
 				}
 
+				g.isOver = true
+
 				g.player1.send <- []byte(gameEndMessageString)
 				g.player2.send <- []byte(gameEndMessageString)
 
@@ -187,6 +189,8 @@ func (g *Game) Run(gp *GamePool) {
 					slog.Error("Error marshalling game end data.")
 					continue
 				}
+
+				g.isOver = true
 
 				g.player1.send <- []byte(gameEndMessageString)
 				g.player2.send <- []byte(gameEndMessageString)

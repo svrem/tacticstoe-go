@@ -34,33 +34,28 @@ func (gp *GamePool) Run() {
 		case client := <-gp.unregister:
 			for i, g := range gp.games {
 				if g.player1 == client || g.player2 == client {
-					type GameAbort struct {
-					}
+					if !g.isOver {
 
-					gameAbortedMessage := DataMessage[GameAbort]{
-						Type: "game_abort",
-						Data: GameAbort{},
-					}
+						gameAbortedMessageString, err := generateGameAbortedMessageString()
 
-					gameAbortedMessageString, err := gameAbortedMessage.Marshal()
+						if err != nil {
+							slog.Error("Error generating game aborted message string: " + err.Error())
+							continue
+						}
 
-					if err != nil {
-						slog.Error("Error marshalling game abort data.")
-						continue
-					}
+						if client != g.player1 {
+							g.player1.send <- []byte(gameAbortedMessageString)
 
-					if client != g.player1 {
-						g.player1.send <- []byte(gameAbortedMessageString)
+							time.Sleep(500 * time.Millisecond)
 
-						time.Sleep(500 * time.Millisecond)
+							g.player1.hub.unregister <- g.player1
+						} else {
+							g.player2.send <- []byte(gameAbortedMessageString)
 
-						g.player1.hub.unregister <- g.player1
-					} else {
-						g.player2.send <- []byte(gameAbortedMessageString)
+							time.Sleep(500 * time.Millisecond)
 
-						time.Sleep(500 * time.Millisecond)
-
-						g.player2.hub.unregister <- g.player2
+							g.player2.hub.unregister <- g.player2
+						}
 					}
 
 					gp.games = append(gp.games[:i], gp.games[i+1:]...)
@@ -70,6 +65,19 @@ func (gp *GamePool) Run() {
 			}
 		}
 	}
+}
+
+func generateGameAbortedMessageString() ([]byte, error) {
+	type GameAbort struct {
+	}
+
+	gameAbortedMessage := DataMessage[GameAbort]{
+		Type: "game_abort",
+		Data: GameAbort{},
+	}
+
+	return gameAbortedMessage.Marshal()
+
 }
 
 func NewGamePool() *GamePool {
