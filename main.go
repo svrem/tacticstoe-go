@@ -25,7 +25,7 @@ func main() {
 	db.MigrateModel(database)
 
 	hub := ws_service.NewHub()
-	go hub.Run()
+	go hub.Run(database)
 
 	// Routes
 	http.HandleFunc("/", getRoot)

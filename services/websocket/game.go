@@ -2,9 +2,11 @@ package websocket_service
 
 import (
 	"log/slog"
+	"tacticstoe/services/rating"
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type GameStart struct {
@@ -29,8 +31,9 @@ type GameAction struct {
 }
 
 type GameEnd struct {
-	Winner string     `json:"winner"`
-	Coords *[3][2]int `json:"coords"`
+	Winner       string     `json:"winner"`
+	Coords       *[3][2]int `json:"coords"`
+	NewEloRating int        `json:"new_elo_rating"`
 }
 
 type Game struct {
@@ -48,16 +51,16 @@ type Game struct {
 	makeAction chan GameAction
 }
 
-func createStartMessage(startingPlayerId string, receiver *Client, opponent *Client) ([]byte, error) {
+func createStartMessage(startingPlayerId string, opponent *Client) ([]byte, error) {
 	gameJoinDataMessage := DataMessage[GameStart]{
 		Type: "game_start",
 
 		Data: GameStart{
 			StartingPlayer: startingPlayerId,
 
-			OpponentPicture:  opponent.profilePicture,
-			OpponentUsername: opponent.username,
-			OpponentElo:      opponent.eloRating,
+			OpponentPicture:  opponent.user.ProfilePicture,
+			OpponentUsername: opponent.user.Username,
+			OpponentElo:      opponent.user.ELO_Rating,
 		},
 	}
 
@@ -65,7 +68,7 @@ func createStartMessage(startingPlayerId string, receiver *Client, opponent *Cli
 }
 
 func newGame(player1 *Client, player2 *Client) *Game {
-	data, err := createStartMessage(player1.id, player1, player2)
+	data, err := createStartMessage(player1.user.ID, player2)
 
 	if err != nil {
 		slog.Error("Error creating game start message.")
@@ -74,7 +77,7 @@ func newGame(player1 *Client, player2 *Client) *Game {
 
 	player1.send <- []byte(data)
 
-	data, err = createStartMessage(player1.id, player2, player1)
+	data, err = createStartMessage(player1.user.ID, player1)
 
 	if err != nil {
 		slog.Error("Error creating game start message.")
@@ -100,7 +103,21 @@ func newGame(player1 *Client, player2 *Client) *Game {
 	}
 }
 
-func (g *Game) Run(gp *GamePool) {
+func createGameEndMessage(winner string, coords *[3][2]int, newEloRating int) ([]byte, error) {
+	gameEndMessage := DataMessage[GameEnd]{
+		Type: "game_end",
+
+		Data: GameEnd{
+			Winner:       winner,
+			Coords:       coords,
+			NewEloRating: newEloRating,
+		},
+	}
+
+	return gameEndMessage.Marshal()
+}
+
+func (g *Game) Run(gp *GamePool, database *gorm.DB) {
 	for {
 		select {
 		case action := <-g.makeAction:
@@ -130,11 +147,15 @@ func (g *Game) Run(gp *GamePool) {
 			g.board = nextBoard
 
 			if checkDraw(g.board) {
+				g.isOver = true
+				rating1, rating2 := rating.UpdateRatings(database, g.player1.user, g.player2.user, 0.5)
+
 				gameEndMessage := DataMessage[GameEnd]{
 					Type: "game_end",
 					Data: GameEnd{
-						Winner: "draw",
-						Coords: nil,
+						Winner:       "draw",
+						Coords:       nil,
+						NewEloRating: rating1,
 					},
 				}
 
@@ -146,10 +167,16 @@ func (g *Game) Run(gp *GamePool) {
 					continue
 				}
 
-				g.isOver = true
-
 				g.player1.send <- []byte(gameEndMessageString)
-				g.player2.send <- []byte(gameEndMessageString)
+
+				gameEndMessage.Data.NewEloRating = rating2
+				gameEndMessageString2, err := gameEndMessage.Marshal()
+
+				if err != nil {
+					slog.Error("Error marshalling game end data.")
+					continue
+				}
+				g.player2.send <- []byte(gameEndMessageString2)
 
 				time.Sleep(500 * time.Millisecond)
 
@@ -168,18 +195,24 @@ func (g *Game) Run(gp *GamePool) {
 			}
 
 			if winnerData != nil {
+				g.isOver = true
+
+				var rating1, rating2 int
 				var winner string
 				if winnerData.player == 1 {
-					winner = g.player1.id
+					rating1, rating2 = rating.UpdateRatings(database, g.player1.user, g.player2.user, 1)
+					winner = g.player1.user.ID
 				} else {
-					winner = g.player2.id
+					rating1, rating2 = rating.UpdateRatings(database, g.player1.user, g.player2.user, 0)
+					winner = g.player2.user.ID
 				}
 
 				gameEndMessage := DataMessage[GameEnd]{
 					Type: "game_end",
 					Data: GameEnd{
-						Winner: winner,
-						Coords: &winnerData.coords,
+						Winner:       winner,
+						Coords:       &winnerData.coords,
+						NewEloRating: rating1,
 					},
 				}
 
@@ -190,9 +223,16 @@ func (g *Game) Run(gp *GamePool) {
 					continue
 				}
 
-				g.isOver = true
-
 				g.player1.send <- []byte(gameEndMessageString)
+
+				gameEndMessage.Data.NewEloRating = rating2
+				gameEndMessageString, err = gameEndMessage.Marshal()
+
+				if err != nil {
+					slog.Error("Error marshalling game end data.")
+					continue
+				}
+
 				g.player2.send <- []byte(gameEndMessageString)
 
 				time.Sleep(500 * time.Millisecond)
@@ -256,7 +296,7 @@ func sendGameUpdate(action GameAction, new_state int, g *Game) error {
 			X:            action.x,
 			Y:            action.y,
 			State:        new_state,
-			ActivePlayer: g.activePlayer.id,
+			ActivePlayer: g.activePlayer.user.ID,
 		}}
 
 	gameUpdateMessageString, err := gameUpdateMessage.Marshal()

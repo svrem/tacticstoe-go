@@ -1,6 +1,10 @@
 package websocket_service
 
-import "log/slog"
+import (
+	"log/slog"
+
+	"gorm.io/gorm"
+)
 
 type Hub struct {
 	clients map[*Client]bool
@@ -18,10 +22,10 @@ func NewHub() *Hub {
 	}
 }
 
-func (h *Hub) Run() {
+func (h *Hub) Run(database *gorm.DB) {
 
 	gamePool := NewGamePool()
-	go gamePool.Run()
+	go gamePool.Run(database)
 
 	queue := NewQueue()
 	go queue.Run(gamePool)
@@ -33,7 +37,7 @@ func (h *Hub) Run() {
 
 			clientAlreadyRegistered := false
 			for c := range h.clients {
-				if c.id == client.id {
+				if c.user.ID == client.user.ID {
 					slog.Info("Client already registered, ignoring...")
 
 					close(client.send)
@@ -50,8 +54,8 @@ func (h *Hub) Run() {
 			queue.register <- client
 
 		case client := <-h.unregister:
-			println("Hub: Unregistering client")
 			if _, ok := h.clients[client]; ok {
+				println("Hub: Unregistering client")
 				gamePool.unregister <- client
 				queue.unregister <- client
 

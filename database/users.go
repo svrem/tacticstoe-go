@@ -46,3 +46,13 @@ func GetUserByID(db *gorm.DB, userId string) *User {
 
 	return &user
 }
+
+func UpdateUser(db *gorm.DB, user *User) error {
+	res := db.Save(user)
+
+	if res.Error != nil {
+		return res.Error
+	}
+
+	return nil
+}

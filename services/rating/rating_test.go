@@ -16,4 +16,6 @@ func TestCalcRatingChange(t *testing.T) {
 	if newWinnerRating != 1207 || newLoserRating != 993 {
 		t.Errorf("Expected newWinnerRating to be 1207 and newLoserRating to be 993, got %d and %d", newWinnerRating, newLoserRating)
 	}
+
+	println(rating.CalcNewRating(1093, 937, 0))
 }

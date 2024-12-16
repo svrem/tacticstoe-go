@@ -66,6 +66,12 @@ main {
     --border-color: var(--loser-color);
   }
 
+  &[data-loading="true"] {
+    & > .game-board {
+      animation: pulse 3.5s infinite;
+    }
+  }
+
   .cell:hover,
   .cell:focus {
     background-color: hsl(10, 0%, 85%);
@@ -315,5 +321,20 @@ main {
   }
   100% {
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 hsla(0, 0%, 0%, 0);
+  }
+  50% {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 10px 0 hsla(0, 0%, 0%, 0.2);
+  }
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 hsla(0, 0%, 0%, 0);
   }
 }

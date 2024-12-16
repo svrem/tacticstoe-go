@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"log/slog"
+	db "tacticstoe/database"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -43,11 +44,7 @@ type ClientActionsData struct {
 type Client struct {
 	conn *websocket.Conn
 
-	eloRating      int
-	profilePicture string
-	username       string
-
-	id string
+	user *db.User
 
 	queue *Queue
 	hub   *Hub
@@ -58,7 +55,7 @@ type Client struct {
 
 func (c *Client) readPump() {
 	defer func() {
-		slog.Info("Closing readPump, id: " + c.id)
+		slog.Info("Closing readPump, id: " + c.user.ID)
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
@@ -109,7 +106,7 @@ func (c *Client) readPump() {
 func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
-		slog.Info("Closing writePump, id: " + c.id)
+		slog.Info("Closing writePump, id: " + c.user.ID)
 
 		ticker.Stop()
 		c.conn.Close()

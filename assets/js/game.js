@@ -23,7 +23,6 @@ class BoardModal extends HTMLElement {
           <button onclick="openSocket()">Play Again</button>
         </div>
   `;
-    console.log(this.innerHTML);
   }
 
   hide() {
@@ -114,21 +113,37 @@ class GameContainer extends HTMLElement {
     }
   }
 
-  setGameEnd(winner, coords) {
+  setGameEnd(winner, coords, new_elo_rating) {
+    const delta_elo = new_elo_rating - window.Auth.user.elo_rating;
+
     switch (winner) {
       case "draw":
-        this.showModal("Draw!", "No one won this game.");
+        this.showModal(
+          "Draw!",
+          `No one won this game. Your ELO changed by ${delta_elo} points.`
+        );
         this.setAttribute("data-draw", true);
         break;
+      case "aborted":
+        this.showModal(
+          "Game Aborted!",
+          `The game was aborted. Your ELO changed by ${delta_elo} points.`
+        );
+
+        break;
       case "player":
-        this.showModal("You Won!", "Your ELO has increased by 10 points!");
+        this.showModal("You Won!", `Your ELO changed by ${delta_elo} points.`);
         this.setAttribute("data-player-winner", true);
         break;
       case "opponent":
-        this.showModal("You Lost!", "Your ELO has decreased by 10 points!");
+        this.showModal("You Lost!", `Your ELO changed by ${delta_elo} points.`);
         this.setAttribute("data-player-winner", false);
         break;
     }
+
+    window.Auth.user.elo_rating = new_elo_rating;
+
+    if (coords.length === 0) return;
 
     let coords_index = 0;
 
@@ -182,7 +197,7 @@ function openSocket() {
   };
 
   socket.onopen = function (e) {
-    console.log("Connected to server");
+    game_container.setAttribute("data-loading", true);
   };
   socket.onmessage = function (event) {
     handleWebSocketMessage(event, game_state);
@@ -210,6 +225,7 @@ function handleWebSocketMessage(event, game_state) {
 
   switch (server_message.type) {
     case "game_start":
+      game_container.removeAttribute("data-loading");
       initializeGame(server_message, game_state);
       break;
 
@@ -237,25 +253,22 @@ function handleWebSocketMessage(event, game_state) {
 
       break;
 
-    case "game_abort":
-      game_container.showModal(
-        "You Won!",
-        "Your opponent has left the game, you win! Your ELO has increased by 10 points!"
-      );
-      break;
-
     default:
       console.error("Unknown message type: ", server_message.type);
   }
 }
 function handleGameEnd(server_message, game_state) {
+  const new_elo_rating = server_message.data.new_elo_rating;
+
   const isDraw = server_message.data.winner === "draw";
+  const isAbort = server_message.data.winner === "aborted";
   const winner =
     server_message.data.winner === game_state.player_id ? "player" : "opponent";
 
   game_container.setGameEnd(
-    isDraw ? "draw" : winner,
-    server_message.data.coords
+    isDraw ? "draw" : isAbort ? "aborted" : winner,
+    server_message.data.coords,
+    new_elo_rating
   );
 }
 
