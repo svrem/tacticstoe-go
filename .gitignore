@@ -1,2 +1,4 @@
 .env
 dev.db
+
+bot-wasm/target

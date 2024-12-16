@@ -36,5 +36,13 @@
 
     <script src="assets/js/game.js"></script>
     <script type="module" src="assets/js/user-profile.js"></script>
+
+    <script type="module">
+      import init, { find_best_move } from "/assets/pkg/bot_wasm.js";
+      init().then(() => {
+        const d = find_best_move("0000000000000000", 1);
+        console.log(d);
+      });
+    </script>
   </body>
 </html>
