@@ -27,10 +27,10 @@ func CreateUser(db *gorm.DB, username string, profilePicture string, provider st
 		ProviderId: providerId,
 	}
 
-	res := db.Create(user)
+	err := db.Create(&user).Error
 
-	if res.Error != nil {
-		return nil, res.Error
+	if err != nil {
+		return nil, err
 	}
 
 	return &user, nil
