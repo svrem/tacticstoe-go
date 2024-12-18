@@ -94,6 +94,15 @@ class GameContainer extends HTMLElement {
       el.remove();
     }
 
+    for (const el of this.querySelectorAll("board-modal")) {
+      el.remove();
+    }
+
+    for (const el of this.querySelectorAll(".player-info")) {
+      el.innerHTML = "";
+    }
+
+    this.removeAttribute("data-loading");
     this.removeAttribute("data-draw");
     this.removeAttribute("data-player-winner");
     this.removeAttribute("data-player-turn");
@@ -317,3 +326,65 @@ window.Auth.onAuthChange((user) => {
     };
   }
 });
+
+// const play_bot_button = document.getElementById("play-bot-button");
+
+// play_bot_button.onclick = async () => {
+//   // import("/assets/pkg/bot_wasm.js").then((module) => {
+//   //   module.find_best_move("0000000000000000", 1);
+//   // });
+
+//   const bot_wasm = await import("/assets/pkg/bot_wasm.js");
+//   await bot_wasm.default();
+
+//   console.log(bot_wasm);
+
+//   const best_move = bot_wasm.find_best_move("0000000000000000", 1);
+
+//   console.log(best_move);
+// };
+
+// const play_bot_button = document.getElementById("play-bot-button");
+
+// play_bot_button.onclick = async () => {
+//   const bot_wasm = await import("/assets/pkg/bot_wasm.js");
+//   await bot_wasm.default();
+
+//   game_container = document.getElementById("game-container");
+//   game_container.reset();
+
+//   function botMove() {
+//     let state = "";
+
+//     for (const cell of game_container.game_board.children) {
+//       const s = cell.getAttribute("data-state");
+
+//       if (!s) {
+//         state += "0";
+//         continue;
+//       }
+
+//       if (s == "1") {
+//         state += "1";
+//       } else {
+//         state += "2";
+//       }
+//     }
+
+//     console.log(state);
+//     const bot_res_str = bot_wasm.find_best_move(state, 2);
+//     const [x_s, y_s] = bot_res_str.split(" ");
+//     const x = parseInt(x_s);
+//     const y = parseInt(y_s);
+
+//     console.log(x, y, bot_res_str, x_s, y_s);
+
+//     game_container.handleGameUpdate({ x, y }, 2, true);
+//   }
+
+//   game_container.onCellClick(({ x, y }) => {
+//     game_container.handleGameUpdate({ x, y }, 1, false);
+//     botMove();
+//   });
+
+// };

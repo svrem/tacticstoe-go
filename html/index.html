@@ -28,7 +28,6 @@
     </main>
 
     <div class="play-buttons" id="play-buttons">
-      <button class="play-button bot">Play Bot</button>
       <button id="play-online-button" class="play-button online">
         Play Online
       </button>
@@ -36,13 +35,5 @@
 
     <script src="assets/js/game.js"></script>
     <script type="module" src="assets/js/user-profile.js"></script>
-
-    <script type="module">
-      import init, { find_best_move } from "/assets/pkg/bot_wasm.js";
-      init().then(() => {
-        const d = find_best_move("0000000000000000", 1);
-        console.log(d);
-      });
-    </script>
   </body>
 </html>

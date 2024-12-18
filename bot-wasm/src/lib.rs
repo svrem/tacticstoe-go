@@ -1,3 +1,6 @@
+use rand::distributions::WeightedIndex;
+use rand::prelude::*;
+use rand_chacha::ChaCha8Rng;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub fn check_draw(board: [[i32; 4]; 4]) -> bool {
@@ -157,7 +160,17 @@ fn find_score_for_move(prev_board: Board, prev_action: GameAction, depth: i32, p
         return total_score;
     }
 
-    return total_score / (depth.pow(4)) as i64;
+    return total_score / (depth.pow(10)) as i64;
+}
+
+#[wasm_bindgen]
+extern "C" {
+
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+
+    #[wasm_bindgen(js_namespace = Math)]
+    fn random() -> f64;
 }
 
 #[wasm_bindgen]
@@ -165,19 +178,31 @@ pub fn find_best_move(board_str: String, player: i32) -> String {
     let mut board = [[0; 4]; 4];
 
     let mut i = 0;
-    for x in 0..4 {
-        for y in 0..4 {
+    for y in 0..4 {
+        for x in 0..4 {
             board[x][y] = board_str.chars().nth(i).unwrap().to_digit(10).unwrap() as i32;
             i += 1;
         }
     }
 
+    let mut s = String::from("");
+    for x in 0..4 {
+        for y in 0..4 {
+            // log(&format!("{}", board[x][y]));
+            s.push_str(&format!("{} ", board[x][y]));
+        }
+        s.push_str("\n");
+    }
+
+    log(s.as_str());
+
     let mut scores = vec![];
+    let mut index: i64 = 0;
 
     for x in 0..4 {
         for y in 0..4 {
             if board[x][y] != 0 {
-                scores.push(std::i64::MIN);
+                index += 1;
                 continue;
             }
 
@@ -192,22 +217,34 @@ pub fn find_best_move(board_str: String, player: i32) -> String {
 
             let score = find_score_for_move(next_board, action, 0, player);
 
-            scores.push(score);
+            scores.push((score, index));
+            index += 1;
         }
     }
 
-    let mut max_score = std::i64::MIN;
-    let mut max_score_index = 0;
+    scores.sort_by(|a, b| b.0.cmp(&a.0));
 
-    for (i, score) in scores.iter().enumerate() {
-        if *score > max_score {
-            max_score = *score;
-            max_score_index = i;
-        }
+    let mut weights: [u32; 16] = [0; 16];
+    for (index, score) in scores.iter().enumerate() {
+        weights[index as usize] =
+            ((score.0 - i64::MIN) as f32 / i64::MAX as f32 * u32::MAX as f32) as u32;
     }
+    let dist = WeightedIndex::new(&weights).unwrap();
 
-    let x = max_score_index / 4;
-    let y = max_score_index % 4;
+    let mut rng = ChaCha8Rng::seed_from_u64((random() * 10000.) as u64);
+
+    let index = dist.sample(&mut rng);
+
+    log(&format!("{:?}", weights));
+    log(&format!(
+        "{} {}",
+        scores[index as usize].0, scores[index as usize].1
+    ));
+
+    let max_score = scores[index as usize];
+
+    let x = max_score.1 / 4;
+    let y = max_score.1 % 4;
 
     return format!("{} {}", x, y);
 }
