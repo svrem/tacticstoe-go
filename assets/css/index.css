@@ -205,6 +205,19 @@ footer {
     box-shadow: 0 2px 0 hsl(202, 77%, 30%);
     transform: translateY(2px);
   }
+
+  & > .tutorial-button {
+    background-color: hsl(202, 77%, 20%);
+    box-shadow: 0 4px 0 hsl(202, 77%, 10%);
+
+    padding: 0;
+    width: fit-content;
+    flex-grow: 0;
+    aspect-ratio: 1;
+    flex-shrink: 0;
+
+    transform: scaleX(1.02);
+  }
 }
 
 .game-end-message-container {

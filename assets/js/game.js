@@ -555,3 +555,27 @@ on_device_button.onclick = () => {
 //   });
 
 // };
+
+function showTutorial() {
+  const tutorial_template = document.getElementById("tutorial-template");
+  const tutorial_dialog = document.createElement("app-dialog");
+
+  tutorial_dialog.innerHTML = tutorial_template.innerHTML;
+
+  document.body.appendChild(tutorial_dialog);
+
+  setTimeout(() => {
+    tutorial_dialog.show();
+  });
+}
+
+setTimeout(() => {
+  if (localStorage.getItem("tutorial-seen") !== "true") {
+    showTutorial();
+    localStorage.setItem("tutorial-seen", "true");
+  }
+}, 1000);
+
+document.getElementById("tutorial-button").addEventListener("click", () => {
+  showTutorial();
+});

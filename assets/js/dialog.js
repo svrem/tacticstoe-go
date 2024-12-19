@@ -16,15 +16,19 @@ class Dialog extends HTMLElement {
             height: 100%;
 
 
+
             & > * {
                 opacity: 0;
             }
             
             &.hidden > * {
+                pointer-events: none;
                 opacity: 0;
+            
             }
 
             &.show > * {
+                pointer-events: all;
                 opacity: 1;
             }
         }
@@ -39,7 +43,7 @@ class Dialog extends HTMLElement {
             position: relative;
 
             width: 80%;
-            max-width: 400px;
+            max-width: 600px;
 
             padding: 1rem;
             border-radius: .5rem;
@@ -82,7 +86,10 @@ class Dialog extends HTMLElement {
     `;
   }
 
-  fadeOut() {
+  hide() {
+    this.ariaHidden = true;
+    this.tabIndex = -1;
+
     this.shadowRoot.querySelector(".dialog").classList.add("hidden");
     this.shadowRoot.querySelector(".dialog").classList.remove("show");
 
@@ -91,19 +98,23 @@ class Dialog extends HTMLElement {
     }, 100);
   }
 
-  connectedCallback() {
-    setTimeout(() => {
-      this.shadowRoot.querySelector(".dialog").classList.add("show");
-    }, 100);
+  show() {
+    this.ariaHidden = false;
+    this.tabIndex = 1;
 
+    this.shadowRoot.querySelector(".dialog").classList.add("show");
+    this.shadowRoot.querySelector(".dialog").classList.remove("hidden");
+  }
+
+  connectedCallback() {
     this.shadowRoot.querySelector("#close").addEventListener("click", () => {
-      this.fadeOut();
+      this.hide();
     });
 
     this.shadowRoot
       .querySelector(".dialog__overlay")
       .addEventListener("click", () => {
-        this.fadeOut();
+        this.hide();
       });
   }
 }
