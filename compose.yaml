@@ -21,7 +21,7 @@ services:
       - "traefik.http.routers.tacticstoe-go.tls.certresolver=myresolver"
 
     volumes:
-      - db-data:/build/dev.db
+      - db-data:/build/db
 
     environment:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
