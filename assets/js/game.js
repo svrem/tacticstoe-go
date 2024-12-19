@@ -20,7 +20,7 @@ class BoardModal extends HTMLElement {
         <p>${this.getAttribute("message")}</p> 
 
         <div class="bottom">
-          <button onclick="openSocket()">Play Again</button>
+          <button onclick="this.parentElement.parentElement.hide()">Close</button>
         </div>
   `;
   }
@@ -68,6 +68,7 @@ class GameContainer extends HTMLElement {
 
   handleCellClick = (e) => {
     const cell_index = e.target.getAttribute("data-cell");
+    if (!cell_index) return;
 
     const x = cell_index % 4;
     const y = Math.floor(cell_index / 4);
@@ -326,6 +327,174 @@ window.Auth.onAuthChange((user) => {
     };
   }
 });
+
+function checkForMoveValidity(action, board) {
+  if (board[action.x][action.y] !== 0) {
+    return false;
+  }
+
+  const nextBoard = board.map((row) => row.slice());
+  nextBoard[action.x][action.y] = action.player;
+  const winner_data = checkBoardForWin(nextBoard);
+
+  if (!winner_data) return true;
+
+  const opponent = winner_data.player === 1 ? 2 : 1;
+
+  // Check if the move is valid,
+  // by checking if the opponent has placed their tick in a square directly adjacent
+  // to the square the player is trying to place their tick in
+  // e.g. if the player is trying to place their tick in (1, 1),
+  // and the opponent has placed their tick in (0, 1), (2, 1), (1, 0), or (1, 2),
+  // then the move is valid
+  if (
+    (action.x === 0 || nextBoard[action.x - 1][action.y] !== opponent) &&
+    (action.x === 3 || nextBoard[action.x + 1][action.y] !== opponent) &&
+    (action.y === 0 || nextBoard[action.x][action.y - 1] !== opponent) &&
+    (action.y === 3 || nextBoard[action.x][action.y + 1] !== opponent)
+  )
+    return false;
+
+  return true;
+}
+
+function checkBoardForWin(board) {
+  for (let x = 0; x < 4; x++) {
+    for (let y = 0; y < 4; y++) {
+      if (board[x][y] === 0) {
+        continue;
+      }
+
+      if (
+        x > 0 &&
+        x < 3 &&
+        board[x][y] === board[x - 1][y] &&
+        board[x][y] === board[x + 1][y]
+      ) {
+        return {
+          player: board[x][y],
+          coords: [
+            [x - 1, y],
+            [x, y],
+            [x + 1, y],
+          ],
+        };
+      }
+
+      if (
+        y > 0 &&
+        y < 3 &&
+        board[x][y] === board[x][y - 1] &&
+        board[x][y] === board[x][y + 1]
+      ) {
+        return {
+          player: board[x][y],
+          coords: [
+            [x, y - 1],
+            [x, y],
+            [x, y + 1],
+          ],
+        };
+      }
+
+      if (
+        x > 0 &&
+        x < 3 &&
+        y > 0 &&
+        y < 3 &&
+        board[x][y] === board[x - 1][y - 1] &&
+        board[x][y] === board[x + 1][y + 1]
+      ) {
+        return {
+          player: board[x][y],
+          coords: [
+            [x - 1, y - 1],
+            [x, y],
+            [x + 1, y + 1],
+          ],
+        };
+      }
+
+      if (
+        x > 0 &&
+        x < 3 &&
+        y > 0 &&
+        y < 3 &&
+        board[x][y] === board[x - 1][y + 1] &&
+        board[x][y] === board[x + 1][y - 1]
+      ) {
+        return {
+          player: board[x][y],
+          coords: [
+            [x - 1, y + 1],
+            [x, y],
+            [x + 1, y - 1],
+          ],
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+const on_device_button = document.getElementById("play-on-device-button");
+
+on_device_button.onclick = () => {
+  game_container = document.getElementById("game-container");
+  game_container.reset();
+
+  game_container.setAttribute("data-player-turn", true);
+
+  const board = Array.from({ length: 4 }, () => Array(4).fill(0));
+
+  let active_player = 1;
+
+  game_container.onCellClick(({ x, y }) => {
+    const isMoveValid = checkForMoveValidity(
+      { x, y, player: active_player },
+      board
+    );
+
+    console.log(isMoveValid);
+
+    if (!isMoveValid) {
+      return;
+    }
+
+    board[x][y] = active_player;
+    game_container.handleGameUpdate({ x, y }, active_player, true);
+
+    const winner_data = checkBoardForWin(board);
+
+    if (winner_data) {
+      game_container.setGameEnd(
+        "player",
+        winner_data.coords,
+        window.Auth.user.elo_rating
+      );
+      return;
+    }
+
+    let isDraw = true;
+
+    for (const row of board) {
+      for (const cell of row) {
+        if (cell === 0) {
+          isDraw = false;
+          break;
+        }
+      }
+    }
+
+    if (isDraw) {
+      game_container.setGameEnd("draw", [], window.Auth.user.elo_rating);
+      return;
+    }
+
+    active_player = active_player === 1 ? 2 : 1;
+  });
+};
 
 // const play_bot_button = document.getElementById("play-bot-button");
 
