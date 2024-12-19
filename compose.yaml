@@ -20,6 +20,9 @@ services:
       - "traefik.http.routers.tacticstoe-go.entrypoints=websecure"
       - "traefik.http.routers.tacticstoe-go.tls.certresolver=myresolver"
 
+    volumes:
+      - db-data:/build/dev.db
+
     environment:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
@@ -29,6 +32,9 @@ services:
 
     expose:
       - "8080"
+
+volumes:
+  db-data:
 
 networks:
   proxy:

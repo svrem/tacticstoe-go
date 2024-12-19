@@ -23,19 +23,28 @@
 
       <user-profile />
     </header>
+
     <main>
-      <game-container />
+      <game-container></game-container>
+
+      <div class="play-buttons" id="play-buttons">
+        <button id="play-on-device-button" class="play-button single-player">
+          On Device
+        </button>
+
+        <button id="play-online-button" class="play-button online">
+          Play Online
+        </button>
+      </div>
     </main>
 
-    <div class="play-buttons" id="play-buttons">
-      <button id="play-on-device-button" class="play-button single-player">
-        On Device
-      </button>
-
-      <button id="play-online-button" class="play-button online">
-        Play Online
-      </button>
-    </div>
+    <footer>
+      <p>
+        Made by <a href="https://github.com/svrem">svrem</a>. The source code is
+        available on
+        <a href="https://github.com/svrem/tacticstoe-go">GitHub</a>.
+      </p>
+    </footer>
 
     <script src="assets/js/game.js"></script>
     <script type="module" src="assets/js/user-profile.js"></script>
