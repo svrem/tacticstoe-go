@@ -1,8 +1,8 @@
-package websocket_service
+package websocket
 
 import (
 	"log/slog"
-	"tacticstoe/services/rating"
+	"tacticstoe/internal/rating"
 	"time"
 
 	"github.com/google/uuid"

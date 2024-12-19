@@ -1,9 +1,9 @@
-package websocket_service
+package websocket
 
 import (
 	"log/slog"
 	"net/http"
-	auth_service "tacticstoe/services/auth"
+	"tacticstoe/internal/auth"
 
 	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
@@ -20,7 +20,7 @@ var upgrader = websocket.Upgrader{
 
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, database *gorm.DB) {
 	slog.Info("wsHandler: ServeWs")
-	user := auth_service.AutherizeUser(w, r, database)
+	user := auth.AutherizeUser(w, r, database)
 
 	if user == nil {
 		slog.Info("wsHandler: Unauthorized")

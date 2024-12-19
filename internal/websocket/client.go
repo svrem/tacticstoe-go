@@ -1,10 +1,10 @@
-package websocket_service
+package websocket
 
 import (
 	"bytes"
 	"encoding/json"
 	"log/slog"
-	db "tacticstoe/database"
+	db "tacticstoe/internal/database"
 	"time"
 
 	"github.com/gorilla/websocket"

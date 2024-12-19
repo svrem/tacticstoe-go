@@ -1,9 +1,9 @@
-package auth_service
+package auth
 
 import (
 	"encoding/json"
 	"net/http"
-	db "tacticstoe/database"
+	db "tacticstoe/internal/database"
 	"time"
 
 	"gorm.io/gorm"

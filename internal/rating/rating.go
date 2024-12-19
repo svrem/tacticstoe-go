@@ -2,7 +2,7 @@ package rating
 
 import (
 	"math"
-	db "tacticstoe/database"
+	db "tacticstoe/internal/database"
 
 	"gorm.io/gorm"
 )

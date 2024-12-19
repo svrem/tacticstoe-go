@@ -1,7 +1,7 @@
 package rating_test
 
 import (
-	"tacticstoe/services/rating"
+	"tacticstoe/internal/rating"
 	"testing"
 )
 

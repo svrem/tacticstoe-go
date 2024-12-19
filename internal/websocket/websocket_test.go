@@ -1,4 +1,4 @@
-package websocket_service
+package websocket
 
 import "testing"
 

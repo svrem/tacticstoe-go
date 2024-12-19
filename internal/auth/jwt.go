@@ -1,9 +1,9 @@
-package auth_service
+package auth
 
 import (
 	"log/slog"
 	"os"
-	db "tacticstoe/database"
+	db "tacticstoe/internal/database"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"

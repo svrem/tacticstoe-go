@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	db "tacticstoe/database"
-	auth_service "tacticstoe/services/auth"
-	ws_service "tacticstoe/services/websocket"
+	"tacticstoe/internal/auth"
+	db "tacticstoe/internal/database"
+	"tacticstoe/internal/websocket"
 
 	"github.com/joho/godotenv"
 )
@@ -24,23 +24,23 @@ func main() {
 	database := db.OpenDatabase()
 	db.MigrateModel(database)
 
-	hub := ws_service.NewHub()
+	hub := websocket.NewHub()
 	go hub.Run(database)
 
 	// Routes
 	http.HandleFunc("/", getRoot)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws_service.ServeWs(hub, w, r, database)
+		websocket.ServeWs(hub, w, r, database)
 	})
 
 	http.HandleFunc("GET /auth/me/", func(w http.ResponseWriter, r *http.Request) {
-		auth_service.MeHandler(w, r, database)
+		auth.MeHandler(w, r, database)
 	})
-	http.HandleFunc("GET /auth/login/{provider}/", auth_service.LoginHandler)
-	http.HandleFunc("GET /auth/logout/", auth_service.LogoutHandler)
+	http.HandleFunc("GET /auth/login/{provider}/", auth.LoginHandler)
+	http.HandleFunc("GET /auth/logout/", auth.LogoutHandler)
 	http.HandleFunc("GET /auth/callback/{provider}/", func(w http.ResponseWriter, r *http.Request) {
-		auth_service.CallbackHandler(w, r, database)
+		auth.CallbackHandler(w, r, database)
 	})
 
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
