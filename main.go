@@ -12,7 +12,7 @@ import (
 )
 
 func getRoot(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "html/index.html")
+	http.ServeFile(w, r, "views/index.html")
 }
 
 func main() {

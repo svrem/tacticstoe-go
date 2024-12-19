@@ -97,6 +97,7 @@ main {
     background-color: hsl(240, 0%, 92%);
     border: 1px solid hsl(var(--border-color));
     transition: border-color 0.2s;
+    padding: 0.5rem;
   }
 }
 

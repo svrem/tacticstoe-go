@@ -2,3 +2,5 @@
 dev.db
 
 bot-wasm/target
+
+dist/

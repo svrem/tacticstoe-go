@@ -38,6 +38,41 @@
       </div>
     </main>
 
+    <app-dialog id="dialog">
+      <style>
+        h2 {
+          margin-bottom: 1rem;
+        }
+
+        img {
+          width: 100%;
+        }
+      </style>
+
+      <h2>How to play</h2>
+
+      <p>
+        The rules are the same as in the classic TicTacToe game, but with one
+        twist: you can only place the winning piece in a cell that has an
+        opponent's piece in a directly adjacent cell (horizontally, vertically,
+        but not diagonally). In the example below, the player with the "X" piece
+        can not place their piece, because there is no opponent's piece in a
+        directly adjacent cell.
+      </p>
+
+      <img src="assets/img/incorrect-example.png" alt="Incorrect example" />
+
+      <p>
+        In this example, the player with the "X" piece can place their piece in
+        the cell, because there is an opponent's piece in a directly adjacent
+        cell.
+      </p>
+
+      <img src="assets/img/correct-example.png" alt="Correct example" />
+
+      <p>That's it! Have fun playing TacTicsToe!</p>
+    </app-dialog>
+
     <footer>
       <p>
         Made by <a href="https://github.com/svrem">svrem</a>. The source code is
@@ -45,6 +80,8 @@
         <a href="https://github.com/svrem/tacticstoe-go">GitHub</a>.
       </p>
     </footer>
+
+    <script type="module" src="assets/js/dialog.js"></script>
 
     <script src="assets/js/game.js"></script>
     <script type="module" src="assets/js/user-profile.js"></script>
