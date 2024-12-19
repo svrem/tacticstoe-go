@@ -124,7 +124,7 @@ class GameContainer extends HTMLElement {
   }
 
   setGameEnd(winner, coords, new_elo_rating) {
-    const delta_elo = new_elo_rating - window.Auth.user.elo_rating;
+    const delta_elo = new_elo_rating - (window?.Auth?.user?.elo_rating || 0);
 
     switch (winner) {
       case "draw":
@@ -151,7 +151,7 @@ class GameContainer extends HTMLElement {
         break;
     }
 
-    window.Auth.user.elo_rating = new_elo_rating;
+    if (window.Auth.user) window.Auth.user.elo_rating = new_elo_rating;
 
     if (coords.length === 0) return;
 
@@ -456,8 +456,6 @@ on_device_button.onclick = () => {
       board
     );
 
-    console.log(isMoveValid);
-
     if (!isMoveValid) {
       return;
     }
@@ -471,7 +469,7 @@ on_device_button.onclick = () => {
       game_container.setGameEnd(
         "player",
         winner_data.coords,
-        window.Auth.user.elo_rating
+        window?.Auth?.user?.elo_rating || 0
       );
       return;
     }
@@ -488,7 +486,7 @@ on_device_button.onclick = () => {
     }
 
     if (isDraw) {
-      game_container.setGameEnd("draw", [], window.Auth.user.elo_rating);
+      game_container.setGameEnd("draw", [], window.Auth?.user.elo_rating || 0);
       return;
     }
 
